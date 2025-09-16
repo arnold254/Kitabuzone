@@ -72,7 +72,7 @@ jobs:
 
       - name: Run migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
         run: |
           flask db upgrade || true
 

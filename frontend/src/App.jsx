@@ -1,34 +1,41 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import AddBook from './pages/AddBook'
+import BookDetails from './pages/BookDetails'
+import BorrowingCart from './pages/BorrowingCart'
+import Library from './pages/Library'
+import PaymentMethodCard from './pages/PaymentMethodCard'
+import PaymentMethodEwallet from './pages/PaymentMethodEwallet'
+import PaymentMethodMpesa from './pages/PaymentMethodMpesa'
+import PaymentProcessing from './pages/PaymentProcessing'
+import PaymentSuccessful from './pages/PaymentSuccessful'
+import ShoppingCart from './pages/ShoppingCart'
+import Store from './pages/Store'
+import ViewBorrowedBooks from './pages/ViewBorrowedBooks'
+import ViewOrders from './pages/ViewOrders'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <BrowserRouter>
+
+      <Routes>
+        <Route path="/" element={<Store />} />
+          <Route path="/addBook" element={<AddBook />} />
+          <Route path="/bookDetails" element={<BookDetails />} />
+          <Route path="/borrowingCart" element={<BorrowingCart />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/paymentMethodCard" element={<PaymentMethodCard />} />
+          <Route path="/paymentMethodEwallet" element={<PaymentMethodEwallet />} />
+          <Route path="/paymentMethodMpesa" element={<PaymentMethodMpesa />} />
+          <Route path="/paymentProcessing" element={<PaymentProcessing />} />
+          <Route path="/paymentSuccessful" element={<PaymentSuccessful />} />
+          <Route path="/shoppingCart" element={<ShoppingCart />} />
+          <Route path="/viewBorrowedBooks" element={<ViewBorrowedBooks />} />
+          <Route path="/viewOrders" element={<ViewOrders />} />
+      </Routes>
+
+    </BrowserRouter>
   )
 }
 

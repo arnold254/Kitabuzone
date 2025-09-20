@@ -13,10 +13,6 @@ import ShoppingCart from './pages/ShoppingCart'
 import Store from './pages/Store'
 import ViewBorrowedBooks from './pages/ViewBorrowedBooks'
 import ViewOrders from './pages/ViewOrders'
-import Login from './pages/auth/Login'
-import Signup from './pages/auth/Signup'
-import ForgotPassword from './pages/auth/ForgotPassword'
-import ResetPassword from './pages/auth/ResetPassword'
 
 function App() {
 
@@ -37,11 +33,6 @@ function App() {
           <Route path="/shoppingCart" element={<ShoppingCart />} />
           <Route path="/viewBorrowedBooks" element={<ViewBorrowedBooks />} />
           <Route path="/viewOrders" element={<ViewOrders />} />
-          <Route path="/Login" element={<Login />} />
-          <Route path="/Signup" element={<Signup />} />
-         <Route path="/forgot-password" element={<ForgotPassword />} />
-         <Route path="/reset-password" element={<ResetPassword />} />
-
       </Routes>
 
     </BrowserRouter>

@@ -2,6 +2,8 @@
 from datetime import datetime
 from uuid import uuid4
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token, decode_token
+from flask import current_app
 from .extensions import db
 
 def gen_id():
@@ -27,6 +29,26 @@ class User(db.Model):
     def check_password(self, raw_password: str) -> bool:
         """Return True if the password matches."""
         return check_password_hash(self.password_hash, raw_password)
+
+    def generate_reset_token(self):
+        """Generate a JWT reset token using user id"""
+        return create_access_token(
+            identity=str(self.id),
+            additional_claims={"reset": True},
+            expires_delta=current_app.config["RESET_TOKEN_EXPIRES"]
+        )
+
+    @staticmethod
+    def verify_reset_token(token):
+        """Verify the JWT reset token and return the user if valid."""
+        try:
+            data = decode_token(token)
+            if data.get("claims", {}).get("reset"):
+                user_id = data["sub"]
+                return User.query.get(user_id)
+        except Exception:
+            return None
+        return None
     
     def to_dict(self):
         return {

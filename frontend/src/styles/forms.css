@@ -1,0 +1,41 @@
+/* src/styles/forms.css */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.form-input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4B0082;
+  box-shadow: 0 0 0 2px rgba(75, 0, 130, 0.2);
+}
+
+.form-error {
+  color: #DC143C;
+  font-size: 0.875rem;
+}
+
+.form-success {
+  color: #228B22;
+  font-size: 0.875rem;
+}

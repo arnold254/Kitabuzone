@@ -1,7 +1,5 @@
 // src/components/forms/LoginForm.jsx
-
 import { useState } from 'react'
-import Button from '../ui/Button'
 import '../../styles/login-form.css'
 
 const LoginForm = ({ onSubmit }) => {
@@ -60,7 +58,11 @@ const LoginForm = ({ onSubmit }) => {
         {errors.password && <p className="form-error">{errors.password}</p>}
       </div>
       {success && <p className="form-success">{success}</p>}
-      <Button type="submit">Login</Button>
+
+      {/* Purple, full-width submit */}
+      <button type="submit" className="button button-primary full-width">
+        Login
+      </button>
     </form>
   )
 }

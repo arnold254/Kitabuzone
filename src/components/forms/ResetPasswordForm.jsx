@@ -1,7 +1,5 @@
 // src/components/forms/ResetPasswordForm.jsx
-
 import { useState } from 'react'
-import Button from '../ui/Button'
 import '../../styles/reset-password-form.css'
 
 const ResetPasswordForm = ({ onSubmit }) => {
@@ -58,7 +56,10 @@ const ResetPasswordForm = ({ onSubmit }) => {
         {errors.confirmPassword && <p className="form-error">{errors.confirmPassword}</p>}
       </div>
       {success && <p className="form-success">{success}</p>}
-      <Button type="submit">Reset Password</Button>
+
+      <button type="submit" className="button button-primary full-width">
+        Reset Password
+      </button>
     </form>
   )
 }

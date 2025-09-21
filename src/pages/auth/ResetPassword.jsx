@@ -1,37 +1,30 @@
-// src/pages/auth/ResetPassword.jsx
-import { useNavigate } from 'react-router-dom';
-import ResetPasswordForm from '../../components/forms/ResetPasswordForm';
-import Header from '../../components/layout/Header';
-import '../../styles/global.css';
+import { Link } from "react-router-dom";
+import "../../styles/auth.css";
+import "../../styles/reset-password-form.css";
 
 const ResetPassword = () => {
-  const navigate = useNavigate();
-
-  const handleSubmit = (formData) => {
-    console.log('Reset password:', formData);
-
-    // Replace with real reset logic
-    setTimeout(() => {
-      navigate('/login');
-    }, 1000);
-  };
-
   return (
-    <div className="page">
-      <main className="page-overlay">
-        {/* Header card */}
-        <div className="page-content">
-          <Header />
-        </div>
+    <div className="auth-page">
+      <main className="auth-main">
+        <div className="auth-card">
+          <h1 className="auth-title">Reset Password</h1>
+          <form className="form">
+            <div className="form-group">
+              <label className="form-label">New Password</label>
+              <input type="password" className="form-input" required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Confirm Password</label>
+              <input type="password" className="form-input" required />
+            </div>
+            <button type="submit" className="button button-primary w-full">
+              Update Password
+            </button>
+          </form>
 
-        {/* Form card */}
-        <div className="page-content">
-          <h2 className="page-title">Reset your password</h2>
-          <ResetPasswordForm onSubmit={handleSubmit} />
-          <p className="terms">
-            By continuing, you agree to our{' '}
-            <a href="/terms">Terms & Conditions</a>
-          </p>
+          <Link to="/auth/login" className="auth-link">
+            Back to Login
+          </Link>
         </div>
       </main>
     </div>

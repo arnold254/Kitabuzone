@@ -1,40 +1,42 @@
 // src/pages/auth/Login.jsx
-import { useNavigate, Link } from 'react-router-dom';
-import LoginForm from '../../components/forms/LoginForm';
-import Header from '../../components/layout/Header';
-import '../../styles/global.css';
-import '../../styles/auth.css'; // <- new auth styling
+import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext"; // ✅ use context
+import LoginForm from "../../components/forms/LoginForm";
+import "../../styles/login.css";
+import "../../styles/login-form.css";
 
 const Login = () => {
-  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = (formData) => {
-    console.log('Login attempt:', formData);
-    setTimeout(() => navigate('/admin'), 1000);
+  const handleLogin = (formData) => {
+    // Mocked login logic
+    if (formData.email === "admin@example.com" && formData.password === "admin123") {
+      login({ role: "admin", email: formData.email });
+    } else if (formData.email === "user@example.com" && formData.password === "user123") {
+      login({ role: "user", email: formData.email });
+    } else {
+      alert("❌ Invalid credentials (mock check)");
+    }
   };
 
   return (
-    <div className="auth-page">
-      {/* Full-width header */}
-      <Header />
+    <div className="page">
+      <div className="page-overlay">
+        <div className="page-content">
+          <h1 className="page-title">Login</h1>
 
-      {/* Centered card */}
-      <main className="auth-main">
-        <div className="auth-card">
-          <h2 className="auth-title">Sign in to KITABU ZONE</h2>
+          {/* ✅ Reusable form */}
+          <LoginForm onSubmit={handleLogin} />
 
-          <LoginForm onSubmit={handleSubmit} />
-
-          <Link to="/forgot-password" className="auth-link">
-            Forgot your password?
+          {/* ✅ Correct paths */}
+          <Link to="/auth/forgot-password" className="page-link">
+            Forgot Password?
           </Link>
-
-          <p className="auth-terms">
-            By signing in, you agree to our{' '}
-            <a href="/terms">Terms & Conditions</a>
-          </p>
+          <Link to="/auth/signup" className="page-link">
+            Don’t have an account? Signup
+          </Link>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

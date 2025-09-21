@@ -1,30 +1,26 @@
-// src/pages/auth/ForgotPassword.jsx
-import { useNavigate } from 'react-router-dom';
-import ForgotPasswordForm from '../../components/forms/ForgotPasswordForm';
-import Header from '../../components/layout/Header';
-import '../../styles/global.css';
-import '../../styles/auth.css'; // new shared styles
+import { Link } from "react-router-dom";
+import "../../styles/auth.css";
+import "../../styles/forgot-password-form.css";
 
 const ForgotPassword = () => {
-  const navigate = useNavigate();
-
-  const handleSubmit = (formData) => {
-    console.log('Forgot password:', formData);
-    setTimeout(() => navigate('/reset-password'), 1000);
-  };
-
   return (
     <div className="auth-page">
-      <Header />
-
       <main className="auth-main">
         <div className="auth-card">
-          <h2 className="auth-title">Forgot your password?</h2>
-          <ForgotPasswordForm onSubmit={handleSubmit} />
-          <p className="auth-terms">
-            Check your email for instructions. By continuing, you agree to our{' '}
-            <a href="/terms">Terms & Conditions</a>
-          </p>
+          <h1 className="auth-title">Forgot Password</h1>
+          <form className="form">
+            <div className="form-group">
+              <label className="form-label">Enter your email</label>
+              <input type="email" className="form-input" required />
+            </div>
+            <button type="submit" className="button button-primary w-full">
+              Reset Password
+            </button>
+          </form>
+
+          <Link to="/auth/login" className="auth-link">
+            Back to Login
+          </Link>
         </div>
       </main>
     </div>

@@ -1,7 +1,5 @@
 // src/components/forms/SignupForm.jsx
-
 import { useState } from 'react'
-import Button from '../ui/Button'
 import '../../styles/signup-form.css'
 
 const SignupForm = ({ onSubmit }) => {
@@ -71,7 +69,10 @@ const SignupForm = ({ onSubmit }) => {
         {errors.confirmPassword && <p className="form-error">{errors.confirmPassword}</p>}
       </div>
       {success && <p className="form-success">{success}</p>}
-      <Button type="submit">Sign Up</Button>
+
+      <button type="submit" className="button button-primary full-width">
+        Sign Up
+      </button>
     </form>
   )
 }

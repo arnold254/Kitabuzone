@@ -1,30 +1,34 @@
-// src/pages/auth/Signup.jsx
-import { useNavigate } from 'react-router-dom';
-import SignupForm from '../../components/forms/SignupForm';
-import Header from '../../components/layout/Header';
-import '../../styles/global.css';
-import '../../styles/auth.css'; // new shared styles
+import { Link } from "react-router-dom";
+import "../../styles/auth.css";
+import "../../styles/signup-form.css";
 
 const Signup = () => {
-  const navigate = useNavigate();
-
-  const handleSubmit = (formData) => {
-    console.log('Signup attempt:', formData);
-    setTimeout(() => navigate('/login'), 1000);
-  };
-
   return (
     <div className="auth-page">
-      <Header />
-
       <main className="auth-main">
         <div className="auth-card">
-          <h2 className="auth-title">Create a new account</h2>
-          <SignupForm onSubmit={handleSubmit} />
-          <p className="auth-terms">
-            By signing up, you agree to our{' '}
-            <a href="/terms">Terms & Conditions</a>
-          </p>
+          <h1 className="auth-title">Signup</h1>
+          <form className="form">
+            <div className="form-group">
+              <label className="form-label">Name</label>
+              <input type="text" className="form-input" required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input type="email" className="form-input" required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <input type="password" className="form-input" required />
+            </div>
+            <button type="submit" className="button button-primary w-full">
+              Signup
+            </button>
+          </form>
+
+          <Link to="/auth/login" className="auth-link">
+            Already have an account? Login
+          </Link>
         </div>
       </main>
     </div>

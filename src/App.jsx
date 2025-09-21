@@ -1,51 +1,58 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import AddBook from './pages/AddBook'
-import BookDetails from './pages/BookDetails'
-import BorrowingCart from './pages/BorrowingCart'
-import Library from './pages/Library'
-import PaymentMethodCard from './pages/PaymentMethodCard'
-import PaymentMethodEwallet from './pages/PaymentMethodEwallet'
-import PaymentMethodMpesa from './pages/PaymentMethodMpesa'
-import PaymentProcessing from './pages/PaymentProcessing'
-import PaymentSuccessful from './pages/PaymentSuccessful'
-import ShoppingCart from './pages/ShoppingCart'
-import Store from './pages/Store'
-import ViewBorrowedBooks from './pages/ViewBorrowedBooks'
-import ViewOrders from './pages/ViewOrders'
-import Login from './pages/auth/Login'
-import Signup from './pages/auth/Signup'
-import ForgotPassword from './pages/auth/ForgotPassword'
-import ResetPassword from './pages/auth/ResetPassword'
+import { Routes, Route, useLocation } from "react-router-dom";
+import Header from "./components/layout/Header";
+import { BorrowProvider } from "./context/BorrowContext";
+
+// admin pages
+import AdminLayout from "./pages/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import ManageBooks from "./pages/admin/ManageBooks";
+import ManageUsers from "./pages/admin/ManageUsers";
+import SalesReports from "./pages/admin/SalesReports";
+import LendingReports from "./pages/admin/LendingReports";
+import ActivityLogs from "./pages/admin/ActivityLogs";
+
+// auth pages
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+
+// borrowing pages
+import Library from "./pages/borrowing/Library";
+import BorrowingCart from "./pages/borrowing/BorrowingCart";
+import ViewBorrowedBooks from "./pages/borrowing/ViewBorrowedBooks";
 
 function App() {
+  const location = useLocation();
+  const hideHeader = location.pathname.startsWith("/admin");
 
   return (
-    <BrowserRouter>
-
+    <BorrowProvider>
+      {!hideHeader && <Header />} {/* Hide header on /admin */}
       <Routes>
-        <Route path="/" element={<Store />} />
-          <Route path="/addBook" element={<AddBook />} />
-          <Route path="/bookDetails" element={<BookDetails />} />
-          <Route path="/borrowingCart" element={<BorrowingCart />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/paymentMethodCard" element={<PaymentMethodCard />} />
-          <Route path="/paymentMethodEwallet" element={<PaymentMethodEwallet />} />
-          <Route path="/paymentMethodMpesa" element={<PaymentMethodMpesa />} />
-          <Route path="/paymentProcessing" element={<PaymentProcessing />} />
-          <Route path="/paymentSuccessful" element={<PaymentSuccessful />} />
-          <Route path="/shoppingCart" element={<ShoppingCart />} />
-          <Route path="/viewBorrowedBooks" element={<ViewBorrowedBooks />} />
-          <Route path="/viewOrders" element={<ViewOrders />} />
-          <Route path="/Login" element={<Login />} />
-          <Route path="/Signup" element={<Signup />} />
-         <Route path="/forgot-password" element={<ForgotPassword />} />
-         <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Auth Routes */}
+        <Route path="/auth/login" element={<Login />} />
+        <Route path="/auth/signup" element={<Signup />} />
+        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
 
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="books" element={<ManageBooks />} />
+          <Route path="users" element={<ManageUsers />} />
+          <Route path="sales" element={<SalesReports />} />
+          <Route path="lendings" element={<LendingReports />} />
+          <Route path="activities" element={<ActivityLogs />} />
+        </Route>
+
+        {/* Borrowing Routes */}
+        <Route path="/borrowing/library" element={<Library />} />
+        <Route path="/borrowing/cart" element={<BorrowingCart />} />
+        <Route path="/borrowing/view" element={<ViewBorrowedBooks />} />
       </Routes>
-
-    </BrowserRouter>
-  )
+    </BorrowProvider>
+  );
 }
 
-export default App
+export default App;

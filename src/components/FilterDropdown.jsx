@@ -1,0 +1,118 @@
+<<<<<<< HEAD:frontend/src/components/FilterDropdown.jsx
+import { useStore } from "../context/StoreContext";
+
+const FilterDropdown = () => {
+  const {
+    genreFilter,
+    setGenreFilter,
+    availabilityFilter,
+    setAvailabilityFilter,
+    languageFilter,
+    setLanguageFilter,
+    dateSort,
+    setDateSort,
+    priceFilter,
+    setPriceFilter,
+  } = useStore();
+
+  const genres = ["Fiction", "Non-Fiction", "Science", "Fantasy"];
+  const availabilities = ["Available", "Checked Out"];
+  const languages = ["English", "Swahili"];
+  const sortOptions = ["newest", "oldest"];
+  const priceOptions = ["all", "low", "medium", "high"];
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      <select
+        value={priceFilter}
+        onChange={(e) => setPriceFilter(e.target.value)}
+        className="p-1.5 rounded-full text-sm text-neutral-900 bg-neutral-50 border border-primary-200 focus:outline-none focus:ring-2 focus:ring-accent-500"
+      >
+        <option value="all">All Prices</option>
+        {priceOptions.slice(1).map((price) => (
+          <option key={price} value={price}>
+            {price === "low" ? "Low (≤1000 KES)" : price === "medium" ? "Medium (1000–2000 KES)" : "High (>2000 KES)"}
+          </option>
+        ))}
+      </select>
+      <select
+        value={dateSort}
+        onChange={(e) => setDateSort(e.target.value)}
+        className="p-1.5 rounded-full text-sm text-neutral-900 bg-neutral-50 border border-primary-200 focus:outline-none focus:ring-2 focus:ring-accent-500"
+      >
+        {sortOptions.map((sort) => (
+          <option key={sort} value={sort}>
+            {sort === "newest" ? "Newest First" : "Oldest First"}
+          </option>
+        ))}
+      </select>
+      <select
+        value={genreFilter}
+        onChange={(e) => setGenreFilter(e.target.value)}
+        className="p-1.5 rounded-full text-sm text-neutral-900 bg-neutral-50 border border-primary-200 focus:outline-none focus:ring-2 focus:ring-accent-500"
+      >
+        <option value="">All Genres</option>
+        {genres.map((genre) => (
+          <option key={genre} value={genre}>{genre}</option>
+        ))}
+      </select>
+      <select
+        value={availabilityFilter}
+        onChange={(e) => setAvailabilityFilter(e.target.value)}
+        className="p-1.5 rounded-full text-sm text-neutral-900 bg-neutral-50 border border-primary-200 focus:outline-none focus:ring-2 focus:ring-accent-500"
+      >
+        <option value="">All Availability</option>
+        {availabilities.map((avail) => (
+          <option key={avail} value={avail}>{avail}</option>
+        ))}
+      </select>
+      <select
+        value={languageFilter}
+        onChange={(e) => setLanguageFilter(e.target.value)}
+        className="p-1.5 rounded-full text-sm text-neutral-900 bg-neutral-50 border border-primary-200 focus:outline-none focus:ring-2 focus:ring-accent-500"
+      >
+        <option value="">All Languages</option>
+        {languages.map((lang) => (
+          <option key={lang} value={lang}>{lang}</option>
+        ))}
+      </select>
+    </div>
+  );
+};
+=======
+import { Menu } from "@headlessui/react";
+
+const FilterDropdown = ({ label, value, options, onChange }) => (
+  <Menu as="div" className="relative">
+    <Menu.Button className="bg-purple-200 text-purple-900 px-3 py-1.5 rounded flex items-center justify-between hover:bg-purple-300 text-sm">
+      {value || label} <span>⏷</span>
+    </Menu.Button>
+    <Menu.Items className="absolute z-10 mt-1 w-32 bg-white text-purple-900 rounded shadow-lg">
+      {options.map((option) => (
+        <Menu.Item key={option}>
+          {({ active }) => (
+            <button
+              className={`w-full text-left px-3 py-1 text-sm ${active ? "bg-purple-100" : ""}`}
+              onClick={() => onChange(option)}
+            >
+              {option}
+            </button>
+          )}
+        </Menu.Item>
+      ))}
+      <Menu.Item>
+        {({ active }) => (
+          <button
+            className={`w-full text-left px-3 py-1 text-sm ${active ? "bg-purple-100" : ""}`}
+            onClick={() => onChange("")}
+          >
+            Clear
+          </button>
+        )}
+      </Menu.Item>
+    </Menu.Items>
+  </Menu>
+);
+>>>>>>> ecaba6e2ca919a8c6ef8b801a60a68e83afd984f:src/components/FilterDropdown.jsx
+
+export default FilterDropdown;

@@ -47,3 +47,15 @@
   font-size: 0.9rem;
   color: #555;
 }
+
+/* make form submit buttons full width and centered text */
+.full-width {
+  display: block;
+  width: 100%;
+}
+
+/* ensure button text is centered and bold-ish */
+.button {
+  text-align: center;
+  font-weight: 600;
+}

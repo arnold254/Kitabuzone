@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import create_access_token
-from app.extensions import db
-from app.models import User
+from ..extensions import db
+from ..models import User
 
 bp = Blueprint("auth", __name__)
 
-@bp.route("auth/register", methods=["POST"])
+@bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json() or {}
     name = data.get("name")
@@ -26,7 +26,7 @@ def register():
 
     return jsonify({"msg": "user created", "user": user.to_dict()}), 201
 
-@bp.route("/auth/login", methods=["POST"])
+@bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
     email = data.get("email")
@@ -52,12 +52,12 @@ def login():
 
 
 # password reset
-@bp.route("/auth/request-password-reset", methods=["POST"])
+@bp.route("/request-password-reset", methods=["POST"])
 def request_password_reset():
     """User submits email, system generates reset token"""
     data = request.get_json() or {}
     email = data.get("email")
-    user - User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=email).first()
 
     if not user:
         return jsonify({"msg": "User not found"}), 404
@@ -67,7 +67,7 @@ def request_password_reset():
     return jsonify({"reset_toke": reset_token}), 200
 
 
-@bp.route("/auth/reset-password/<token>", methods=["POST"])
+@bp.route("/reset-password/<token>", methods=["POST"])
 def reset_password(token):
     """User clicks reset link and submits new password"""
     data = request.get_json() or {}

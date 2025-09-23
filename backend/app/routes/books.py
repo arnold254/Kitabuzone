@@ -4,7 +4,7 @@ from ..extensions import db
 from ..models import Book
 from functools import wraps
 
-bp = Blueprint("bokks", __name__)
+bp = Blueprint("books", __name__)
 
 #simple decorator to restrict routes to admin users only
 def admin_required(fn):
@@ -17,19 +17,19 @@ def admin_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
-@bp.route("/books", methods=["GET"])
+@bp.route("/", methods=["GET"])
 def list_books():
 
     #simple list; in a real app, implement pagination
     books = Book.query.all()
     return jsonify([book.to_dict() for book in books]), 200
 
-@bp.route("/books/<string:book_id>", methods=["GET"])
+@bp.route("/<string:book_id>", methods=["GET"])
 def get_book(book_id):
     book = Book.query.get_or_404(book_id)
     return jsonify(book.to_dict()), 200
 
-@bp.route("/books", methods=["POST"])
+@bp.route("/", methods=["POST"])
 @admin_required
 def create_book():
     data = request.get_json() or {}
@@ -49,7 +49,7 @@ def create_book():
     db.session.commit()
     return jsonify(book.to_dict()), 201
 
-@bp.route("/books/<string:book_id>", methods=["PUT"])
+@bp.route("/<string:book_id>", methods=["PUT"])
 @admin_required
 def update_book(book_id):
     book = Book.query.get_or_404(book_id)
@@ -63,7 +63,7 @@ def update_book(book_id):
     db.session.commit()
     return jsonify(book.to_dict()), 200
 
-@bp.route("/books/<string:book_id>", methods=["DELETE"])
+@bp.route("/<string:book_id>", methods=["DELETE"])
 @admin_required
 def delete_book(book_id):
     book = Book.query.get_or_404(book_id)

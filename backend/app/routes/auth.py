@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
-from werkzeug.security import generate_password_hash
-from flask_jwt_extended import create_access_token
+ 
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+ 
 from ..extensions import db
 from ..models import User
 
@@ -19,7 +20,7 @@ def register():
     if User.query.filter_by(email=email).first():
         return jsonify({"msg": "user with this email already exists"}), 409
     
-    user = User(name=name, email=email)
+    user = User(username=name, name=name, email=email)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
@@ -51,36 +52,32 @@ def login():
     }), 200
 
 
-# password reset
+
 @bp.route("/request-password-reset", methods=["POST"])
 def request_password_reset():
-    """User submits email, system generates reset token"""
     data = request.get_json() or {}
     email = data.get("email")
+    if not email:
+        return jsonify({"msg": "email required"}), 400
     user = User.query.filter_by(email=email).first()
-
     if not user:
         return jsonify({"msg": "User not found"}), 404
-    
-    reset_token = user.generate_reset_token()
-
-    return jsonify({"reset_toke": reset_token}), 200
-
+    token = user.generate_reset_token()
+    # In production: email token. In dev return token for testing.
+    return jsonify({"reset_token": token}), 200
 
 @bp.route("/reset-password/<token>", methods=["POST"])
 def reset_password(token):
     """User clicks reset link and submits new password"""
+ 
     data = request.get_json() or {}
     new_password = data.get("new_password")
-
     if not new_password:
-        return jsonify({"msg": "password is required"}), 400
-    
+        return jsonify({"msg": "password required"}), 400
     user = User.verify_reset_token(token)
     if not user:
         return jsonify({"msg": "invalid or expired token"}), 400
-    
-    user.password_hash = generate_password_hash(new_password)
+    user.set_password(new_password)
     db.session.commit()
-
     return jsonify({"msg": "password reset successful"}), 200
+

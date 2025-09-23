@@ -5,8 +5,6 @@ import BookDetails from './pages/BookDetails'
 import BorrowingCart from './pages/BorrowingCart'
 import Library from './pages/Library'
 import PaymentMethodCard from './pages/PaymentMethodCard'
-import PaymentMethodEwallet from './pages/PaymentMethodEwallet'
-import PaymentMethodMpesa from './pages/PaymentMethodMpesa'
 import PaymentProcessing from './pages/PaymentProcessing'
 import PaymentSuccessful from './pages/PaymentSuccessful'
 import ShoppingCart from './pages/ShoppingCart'
@@ -26,8 +24,6 @@ function App() {
           <Route path="/borrowingCart" element={<BorrowingCart />} />
           <Route path="/library" element={<Library />} />
           <Route path="/paymentMethodCard" element={<PaymentMethodCard />} />
-          <Route path="/paymentMethodEwallet" element={<PaymentMethodEwallet />} />
-          <Route path="/paymentMethodMpesa" element={<PaymentMethodMpesa />} />
           <Route path="/paymentProcessing" element={<PaymentProcessing />} />
           <Route path="/paymentSuccessful" element={<PaymentSuccessful />} />
           <Route path="/shoppingCart" element={<ShoppingCart />} />

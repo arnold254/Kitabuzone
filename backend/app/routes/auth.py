@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
+ 
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+ 
 from ..extensions import db
 from ..models import User
 
@@ -32,19 +34,24 @@ def login():
     password = data.get("password")
 
     if not (email and password):
-        return jsonify({"msg": email and password required}), 400
+        return jsonify({"msg": "email and password are required"}), 400
     
     user = User.query.filter_by(email=email).first()
     if not user or not user.check_password(password):
         return jsonify({"msg": "invalid credentials"}), 401
 
 # Add role as an additional claim so we can check admin-only endpoints
-    access_token = create_access_token(identify=user.id, additional_claims={"role": user.role})
+    access_token = create_access_token(
+        identity=user.id, 
+        additional_claims={"role": user.role}
+    )
 
     return jsonify({
         "access_token": access_token,
         "user": user.to_dict()
     }), 200
+
+
 
 @bp.route("/request-password-reset", methods=["POST"])
 def request_password_reset():
@@ -59,9 +66,10 @@ def request_password_reset():
     # In production: email token. In dev return token for testing.
     return jsonify({"reset_token": token}), 200
 
-
 @bp.route("/reset-password/<token>", methods=["POST"])
 def reset_password(token):
+    """User clicks reset link and submits new password"""
+ 
     data = request.get_json() or {}
     new_password = data.get("new_password")
     if not new_password:
@@ -72,3 +80,4 @@ def reset_password(token):
     user.set_password(new_password)
     db.session.commit()
     return jsonify({"msg": "password reset successful"}), 200
+

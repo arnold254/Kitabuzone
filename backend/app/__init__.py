@@ -20,6 +20,9 @@ def create_app(config_class=DevelopmentConfig):
 
     # Register blueprints
     from .routes.health import bp as health_bp
+
+    app.register_blueprint(health_bp, url_prefix="/")
+
     app.register_blueprint(health_bp, url_prefix="/health")
 
     from .routes.auth import bp as auth_bp
@@ -42,5 +45,6 @@ def create_app(config_class=DevelopmentConfig):
 
     from .routes.returns import bp as returns_bp
     app.register_blueprint(returns_bp, url_prefix="/returns")
+
 
     return app

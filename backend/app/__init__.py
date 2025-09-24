@@ -13,6 +13,31 @@ def create_app(config_class=Config):
 
     # Register blueprints
     from .routes.health import bp as health_bp
+
     app.register_blueprint(health_bp, url_prefix="/")
+
+    app.register_blueprint(health_bp, url_prefix="/health")
+
+    from .routes.auth import bp as auth_bp
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+
+    from .routes import bp as books_bp
+    app.register_blueprint(books_bp, url_prefix="/books")
+
+    from .routes.carts import bp as carts_bp
+    app.register_blueprint(carts_bp, url_prefix="/carts")
+
+    from .routes.orders import bp as orders_bp
+    app.register_blueprint(orders_bp, url_prefix="/orders")
+
+    from .routes.lending import bp as lending_bp
+    app.register_blueprint(lending_bp, url_prefix="/lending")
+
+    from .routes.payments import bp as payments_bp
+    app.register_blueprint(payments_bp, url_prefix="/payments")
+
+    from .routes.returns import bp as returns_bp
+    app.register_blueprint(returns_bp, url_prefix="/returns")
+
 
     return app

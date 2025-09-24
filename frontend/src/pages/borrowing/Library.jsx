@@ -1,184 +1,138 @@
-import { useBorrow } from "../../context/BorrowContext";
-import { useAuth } from "../../context/AuthContext";
-import { useAdmin } from "../../context/AdminContext";
-import { useNavigate, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+
+const mockLibraryBooks = [
+  { id: 101, title: "Clean Code", author: "Robert C. Martin", genre: "Programming", language: "English", cover: "https://via.placeholder.com/150x200.png?text=Clean+Code" },
+  { id: 102, title: "The Pragmatic Programmer", author: "Andrew Hunt", genre: "Programming", language: "English", cover: "https://via.placeholder.com/150x200.png?text=Pragmatic+Programmer" },
+  { id: 103, title: "Introduction to Algorithms", author: "Thomas H. Cormen", genre: "Computer Science", language: "English", cover: "https://via.placeholder.com/150x200.png?text=Algorithms" },
+];
 
 const Library = () => {
-  const { addToCart } = useBorrow();
-  const { user, logout } = useAuth();
-  const { books } = useAdmin();
+  const [books, setBooks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [genreFilter, setGenreFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("");
+  const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const [libraryBooks, setLibraryBooks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [genre, setGenre] = useState("");
-  const [format, setFormat] = useState("");
-  const [language, setLanguage] = useState("");
-  const [date, setDate] = useState("");
-  const [toast, setToast] = useState(""); // New: toast notification
-
   useEffect(() => {
-    if (books) {
-      let filtered = books.filter((book) => book.type === "library");
+    fetch("http://localhost:5000/api/library/books")
+      .then(res => {
+        if (!res.ok) throw new Error("Backend not running, using mock data");
+        return res.json();
+      })
+      .then(data => setBooks(data))
+      .catch(() => setBooks(mockLibraryBooks));
+  }, []);
 
-      if (searchTerm) {
-        filtered = filtered.filter(
-          (book) =>
-            book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            book.author.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-
-      if (genre) filtered = filtered.filter((book) => book.genre === genre);
-      if (format) filtered = filtered.filter((book) => book.format === format);
-      if (language) filtered = filtered.filter((book) => book.language === language);
-      if (date)
-        filtered = filtered.sort((a, b) =>
-          date === "Newest" ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date)
-        );
-
-      setLibraryBooks(filtered);
-      setIsLoading(false);
-    }
-  }, [books, searchTerm, genre, format, language, date]);
+  const filteredBooks = books.filter(book =>
+    (!searchTerm || book.title.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (!genreFilter || book.genre === genreFilter) &&
+    (!languageFilter || book.language === languageFilter)
+  );
 
   const handleBorrow = (book) => {
-    if (!user) {
-      alert("⚠️ Please log in to borrow a book.");
-      navigate("/auth/login");
+    if (!isLoggedIn) {
+      alert("Please sign in to borrow books!");
+      navigate("/auth/login", { state: { from: "/library" } });
       return;
     }
-    addToCart(book);
-
-    // Show toast notification
-    setToast(`✅ "${book.title}" added to cart!`);
-    setTimeout(() => setToast(""), 3000); // hide after 3 seconds
+    // ✅ Redirect to borrowing cart
+    navigate("/borrowingCart");
   };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/login");
-  };
-
-  if (isLoading) {
-    return <div className="bg-gray-50 p-6 text-purple-900 text-center text-sm">Loading books...</div>;
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 relative">
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-md z-50">
-          {toast}
+    <div className="min-h-screen flex bg-milky-white">
+      {/* Sidebar */}
+      <aside className="w-48 bg-purple-50 p-4 text-purple-900">
+        <h2 className="font-bold mb-4">Filters</h2>
+        <div className="flex flex-col gap-3">
+          <select
+            className="p-2 rounded border border-purple-300"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          >
+            <option value="">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+          <select
+            className="p-2 rounded border border-purple-300"
+            value={genreFilter}
+            onChange={(e) => setGenreFilter(e.target.value)}
+          >
+            <option value="">All Genres</option>
+            <option value="Programming">Programming</option>
+            <option value="Computer Science">Computer Science</option>
+          </select>
+          <select
+            className="p-2 rounded border border-purple-300"
+            value={languageFilter}
+            onChange={(e) => setLanguageFilter(e.target.value)}
+          >
+            <option value="">All Languages</option>
+            <option value="English">English</option>
+            <option value="Spanish">Spanish</option>
+          </select>
         </div>
-      )}
+      </aside>
 
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-purple-900">📚 Library</h2>
-        <div className="flex gap-4">
-          {user ? (
-            <>
-              <Link to="/borrowing/cart" className="text-purple-700 hover:underline text-sm">Cart</Link>
-              <Link to="/borrowing/view" className="text-purple-700 hover:underline text-sm">View Borrowed</Link>
-              <button onClick={handleLogout} className="text-purple-700 hover:underline text-sm">Logout</button>
-            </>
-          ) : (
-            <>
-              <Link to="/auth/login" className="text-purple-700 hover:underline text-sm">Login</Link>
-              <Link to="/auth/signup" className="text-purple-700 hover:underline text-sm">Signup</Link>
-            </>
+      {/* Main content */}
+      <div className="flex-1 p-6">
+        {/* Header */}
+        <div className="flex items-center mb-6">
+          <Link to="/" className="text-purple-900 font-bold hover:underline">&lt;-- Home</Link>
+          <div className="flex-1 mx-6 relative">
+            <Search className="absolute left-2 top-2 w-4 h-4 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search books..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8 pr-3 py-1 rounded border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            />
+          </div>
+
+          {!isLoggedIn && (
+            <div className="flex-shrink-0 flex gap-4">
+              <Link to="/auth/login" className="hover:underline text-purple-900">Login</Link>
+              <Link to="/auth/signup" className="hover:underline text-purple-900">Signup</Link>
+            </div>
+          )}
+          {isLoggedIn && (
+            <div className="flex-shrink-0 flex gap-4">
+              <Link to="/borrowingCart" className="text-purple-900 hover:underline">Borrowing Cart</Link>
+              <Link to="/viewBorrowedBooks" className="text-purple-900 hover:underline">View Borrowed</Link>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Filters + Search */}
-      <div className="mb-6 flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[200px]">
-          <input
-            type="text"
-            placeholder="Search by title or author..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-          />
-          <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500" />
-        </div>
-
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
-          value={genre}
-          onChange={(e) => setGenre(e.target.value)}
-        >
-          <option value="">All Genres</option>
-          <option value="Fiction">Fiction</option>
-          <option value="Non-Fiction">Non-Fiction</option>
-        </select>
-
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        >
-          <option value="">All Dates</option>
-          <option value="Newest">Newest First</option>
-          <option value="Oldest">Oldest First</option>
-        </select>
-
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-        >
-          <option value="">All Languages</option>
-          <option value="English">English</option>
-          <option value="Spanish">Spanish</option>
-        </select>
-
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
-          value={format}
-          onChange={(e) => setFormat(e.target.value)}
-        >
-          <option value="">Format</option>
-          <option value="Hardcover">Hardcover</option>
-          <option value="Paperback">Paperback</option>
-          <option value="eBook">eBook</option>
-          <option value="Audio">Audio</option>
-        </select>
-      </div>
-
-      {/* Book Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {libraryBooks.length === 0 ? (
-          <p className="text-purple-900 text-sm col-span-full text-center">No books found.</p>
-        ) : (
-          libraryBooks.map((book) => (
-            <div key={book.id} className="bg-white shadow-lg rounded-lg p-4 hover:shadow-xl transition-shadow">
-              <Link to={`/borrowing/bookDetails/${book.id}`}>
-                <img
-                  src={book.cover}
-                  alt={book.title}
-                  className="w-full h-48 object-cover rounded-lg mb-2"
-                />
-                <p className="text-sm text-gray-600">{book.author}</p>
-              </Link>
-              <button
-                onClick={() => handleBorrow(book)}
-                className="mt-2 w-full bg-purple-700 text-white py-2 rounded-lg hover:bg-purple-800 text-sm font-medium"
+        {/* Books Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredBooks.length === 0 ? (
+            <p className="text-purple-900">No books found.</p>
+          ) : (
+            filteredBooks.map(book => (
+              <div
+                key={book.id}
+                className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+                onClick={() => navigate(`/bookDetails/${book.id}`)}
               >
-                Borrow
-              </button>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="mt-8 text-center">
-        <Link to="/" className="text-purple-700 hover:underline text-sm font-medium">← Back to Home</Link>
+                <img src={book.cover} alt={book.title} className="w-full h-48 object-cover rounded mb-2" />
+                <h3 className="font-bold text-purple-900">{book.title}</h3>
+                <p className="text-gray-600">{book.author}</p>
+                <button
+                  className="mt-2 w-full bg-purple-500 text-white py-1 rounded hover:bg-purple-600"
+                  onClick={(e) => { e.stopPropagation(); handleBorrow(book); }}
+                >
+                  Borrow
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

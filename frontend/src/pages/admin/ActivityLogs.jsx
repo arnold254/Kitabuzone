@@ -1,129 +1,136 @@
-import { useAdmin } from "../../context/AdminContext";
+// src/pages/admin/ActivityLogs.jsx
 import { useState } from "react";
 
 const ActivityLogs = () => {
-  const { activityLogs, orders, books, approveOrder, declineOrder } = useAdmin();
-  const [dateFilter, setDateFilter] = useState("");
-  const [sortOrder, setSortOrder] = useState("desc");
+  // Sample activity data
+  const [logs] = useState([
+    { id: 1, user: "John Doe", action: "Borrowed", item: "Book A", date: "2025-09-20" },
+    { id: 2, user: "Mary Smith", action: "Purchased", item: "Book D", date: "2025-09-21" },
+    { id: 3, user: "Alex Johnson", action: "Borrowed", item: "Book B", date: "2025-09-21" },
+    { id: 4, user: "Sarah Connor", action: "Purchased", item: "Book C", date: "2025-09-22" },
+    { id: 5, user: "Jane Doe", action: "Borrowed", item: "Book E", date: "2025-09-22" },
+  ]);
 
-  const filteredLogs = dateFilter
-    ? activityLogs.filter((log) => new Date(log.timestamp).toLocaleDateString() === new Date(dateFilter).toLocaleDateString())
-    : activityLogs;
+  // Sample pending requests
+  const [pendingRequests, setPendingRequests] = useState([
+    { id: 101, user: "Tom Hardy", request: "Borrow Book F", date: "2025-09-23" },
+    { id: 102, user: "Emily Clark", request: "Purchase Book G", date: "2025-09-23" },
+  ]);
 
-  const sortedLogs = [...filteredLogs].sort((a, b) => {
-    const dateA = new Date(a.timestamp);
-    const dateB = new Date(b.timestamp);
-    return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+  const [filterAction, setFilterAction] = useState("All");
+  const [filterDate, setFilterDate] = useState("");
+
+  // Filtering logic
+  const filteredLogs = logs.filter((log) => {
+    const matchAction = filterAction === "All" || log.action === filterAction;
+    const matchDate = !filterDate || log.date === filterDate;
+    return matchAction && matchDate;
   });
 
-  const pendingOrders = orders.filter((o) => o.status === "Pending");
-
-  console.log("ActivityLogs: Rendering pending orders:", pendingOrders);
-  console.log("ActivityLogs: Button styles - Approve: bg-purple-500, Decline: bg-red-500");
+  // Approve/Decline requests
+  const handleRequestAction = (id, action) => {
+    if (window.confirm(`Are you sure you want to ${action} this request?`)) {
+      setPendingRequests(pendingRequests.filter((req) => req.id !== id));
+    }
+  };
 
   return (
-    <div className="bg-gray-50 p-6">
-      <h2 className="text-2xl font-bold text-purple-900 mb-6">📝 Activity Logs</h2>
+    <div className="p-6 space-y-10">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-purple-900">📝 Activity Logs</h2>
 
-      {/* Pending Orders */}
-      <div className="bg-white p-6 rounded-xl shadow-lg mb-6 overflow-x-auto">
-        <h3 className="text-lg font-semibold text-purple-900 mb-4">Pending Orders</h3>
-        <table className="w-full text-sm min-w-[700px]">
-          <thead>
-            <tr className="text-left text-gray-600">
-              <th className="p-2">Order ID</th>
-              <th className="p-2">User</th>
-              <th className="p-2">Book</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Date</th>
-              <th className="p-2 w-64">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingOrders.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="p-2 text-center text-gray-600">
-                  No pending orders.
-                </td>
-              </tr>
-            ) : (
-              pendingOrders.map((o) => (
-                <tr key={o.id} className="border-t">
-                  <td className="p-2">{o.id}</td>
-                  <td className="p-2">{o.user}</td>
-                  <td className="p-2">{books.find((b) => b.id === o.bookId)?.title || "Unknown"}</td>
-                  <td className="p-2">{o.status}</td>
-                  <td className="p-2">{new Date(o.date).toLocaleDateString()}</td>
-                  <td className="p-2">
-                    <div className="flex flex-wrap gap-4 items-center">
-                      <Button
-                        onClick={() => approveOrder(o.id)}
-                        text="Approve"
-                        color="purple-500"
-                        debugStyles={{ visibility: "visible", opacity: 1, zIndex: 10 }}
-                      />
-                      <Button
-                        onClick={() => declineOrder(o.id)}
-                        text="Decline"
-                        color="red-500"
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        {/* Filters */}
+        <div className="flex items-center gap-3">
+          {/* Filter by Action */}
+          <select
+            value={filterAction}
+            onChange={(e) => setFilterAction(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="All">All Actions</option>
+            <option value="Borrowed">Borrowed</option>
+            <option value="Purchased">Purchased</option>
+          </select>
+
+          {/* Filter by Date */}
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm"
+          />
+        </div>
       </div>
 
-      {/* Recent Actions */}
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-purple-900">Recent Actions</h3>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="p-2 border rounded-lg text-sm"
-              placeholder="Filter by date"
-            />
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="p-2 border rounded-lg text-sm"
-            >
-              <option value="desc">Newest First</option>
-              <option value="asc">Oldest First</option>
-            </select>
+      {/* Pending Requests Section */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">⏳ Pending Requests</h3>
+        {pendingRequests.length === 0 ? (
+          <p className="text-gray-500">No pending requests at the moment.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {pendingRequests.map((req) => (
+              <div
+                key={req.id}
+                className="bg-white border rounded-lg p-4 shadow-sm space-y-2"
+              >
+                <h3 className="font-semibold text-purple-800">{req.user}</h3>
+                <p className="text-sm text-gray-600">{req.request}</p>
+                <p className="text-xs text-gray-500">📅 {req.date}</p>
+
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => handleRequestAction(req.id, "approve")}
+                    className="flex-1 bg-green-600 text-white text-sm px-2 py-1 rounded hover:bg-green-700"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleRequestAction(req.id, "decline")}
+                    className="flex-1 bg-red-600 text-white text-sm px-2 py-1 rounded hover:bg-red-700"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-        <ul className="text-sm text-gray-600">
-          {sortedLogs.length === 0 ? (
-            <li className="py-2 text-center">No logs found for selected date.</li>
-          ) : (
-            sortedLogs.map((log) => (
-              <li key={log.id} className="py-2 border-t">
-                {log.action} - {new Date(log.timestamp).toLocaleString()}
-              </li>
-            ))
-          )}
-        </ul>
+        )}
+      </div>
+
+      {/* Logs Section */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">📖 Logs</h3>
+        {filteredLogs.length === 0 ? (
+          <p className="text-gray-500">No activity logs match your filters.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredLogs.map((log) => (
+              <div
+                key={log.id}
+                className="bg-white border rounded-lg p-4 shadow-sm space-y-2"
+              >
+                <h3 className="font-semibold text-purple-800">{log.user}</h3>
+                <p className="text-sm text-gray-600">
+                  {log.action} <span className="font-medium">{log.item}</span>
+                </p>
+                <p className="text-xs text-gray-500">📅 {log.date}</p>
+                <span
+                  className={`inline-block px-2 py-1 text-xs rounded ${
+                    log.action === "Borrowed"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {log.action}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
-  );
-};
-
-const Button = ({ onClick, text, color, debugStyles = {} }) => {
-  console.log(`Button: Rendering ${text} with color ${color}, styles:`, debugStyles);
-  return (
-    <button
-      onClick={onClick}
-      className={`bg-${color} text-white px-4 py-1.5 rounded-lg hover:bg-${color.replace(/\d+$/, (n) => parseInt(n) + 100)} text-sm font-medium min-w-[80px] relative z-10`}
-      style={debugStyles}
-    >
-      {text}
-    </button>
   );
 };
 

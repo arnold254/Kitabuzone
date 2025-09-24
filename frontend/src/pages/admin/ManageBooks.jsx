@@ -1,359 +1,167 @@
-import { useAdmin } from "../../context/AdminContext";
+// src/pages/admin/ManageBooks.jsx
 import { useState } from "react";
 
 const ManageBooks = () => {
-  const { books, addBook, editBook, deleteBook } = useAdmin();
-  const [form, setForm] = useState({
-    title: "",
-    author: "",
-    price: "",
-    genre: "",
-    availability: "Available",
-    language: "",
-    date: "",
-    cover: "",
-    backCover: "",
-    description: "",
-    type: "store",
-  });
-  const [editingId, setEditingId] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({ genre: "", availability: "", language: "", type: "" });
+  const [books, setBooks] = useState([
+    { id: 1, title: "The Great Gatsby", author: "F. Scott Fitzgerald", category: "Classic", status: "Available", location: "Library" },
+    { id: 2, title: "1984", author: "George Orwell", category: "Dystopian", status: "Borrowed", location: "Store" },
+    { id: 3, title: "To Kill a Mockingbird", author: "Harper Lee", category: "Classic", status: "Available", location: "Library" },
+  ]);
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!form.title) newErrors.title = "Title is required";
-    if (!form.author) newErrors.author = "Author is required";
-    if (form.price && !/^\$\d+(\.\d{2})?$/.test(form.price)) newErrors.price = "Price must be in format $X.XX";
-    if (!form.type) newErrors.type = "Type is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [newBook, setNewBook] = useState({ title: "", author: "", category: "", location: "Library" });
+
+  // Add new book
+  const handleAddBook = (e) => {
+    e.preventDefault();
+    if (!newBook.title.trim() || !newBook.author.trim()) return;
+
+    const newEntry = {
+      id: Date.now(), // simple unique id
+      ...newBook,
+      status: "Available",
+    };
+
+    setBooks([newEntry, ...books]);
+    setNewBook({ title: "", author: "", category: "", location: "Library" });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      try {
-        if (editingId) {
-          editBook(editingId, form);
-          setEditingId(null);
-        } else {
-          addBook(form);
-        }
-        setForm({
-          title: "",
-          author: "",
-          price: "",
-          genre: "",
-          availability: "Available",
-          language: "",
-          date: "",
-          cover: "",
-          backCover: "",
-          description: "",
-          type: "store",
-        });
-      } catch (e) {
-        setErrors({ form: e.message });
-      }
+  // Delete book
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this book?")) {
+      setBooks(books.filter((book) => book.id !== id));
     }
   };
 
-  const handleCancel = () => {
-    setEditingId(null);
-    setForm({
-      title: "",
-      author: "",
-      price: "",
-      genre: "",
-      availability: "Available",
-      language: "",
-      date: "",
-      cover: "",
-      backCover: "",
-      description: "",
-      type: "store",
-    });
-    setErrors({});
-  };
-
-  const genres = [...new Set(books.map((b) => b.genre).filter(Boolean))];
-  const languages = [...new Set(books.map((b) => b.language).filter(Boolean))];
-  const types = ["store", "library"];
-
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(search.toLowerCase()) ||
-      book.author.toLowerCase().includes(search.toLowerCase());
-    const matchesGenre = filters.genre ? book.genre === filters.genre : true;
-    const matchesAvailability = filters.availability ? book.availability === filters.availability : true;
-    const matchesLanguage = filters.language ? book.language === filters.language : true;
-    const matchesType = filters.type ? book.type === filters.type : true;
-    return matchesSearch && matchesGenre && matchesAvailability && matchesLanguage && matchesType;
-  });
-
-  console.log("ManageBooks: Rendering books:", filteredBooks);
+  // Filtered books by search (title or author)
+  const filteredBooks = books.filter(
+    (book) =>
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="bg-gray-50 p-6">
-      <h2 className="text-2xl font-bold text-purple-900 mb-6">📚 Manage Books</h2>
-
-      {/* Book Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card title="Total Books" value={books.length} />
-        <Card title="Fiction Books" value={books.filter((b) => b.genre === "Fiction").length} />
-        <Card title="Non-Fiction Books" value={books.filter((b) => b.genre === "Non-Fiction").length} />
+    <div className="p-6 space-y-6">
+      {/* Header with small search */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-purple-900">📚 Manage Books</h2>
+        <input
+          type="text"
+          placeholder="Search by title or author..."
+          className="px-3 py-2 border rounded-md text-sm w-56"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white p-6 rounded-xl shadow-lg mb-6">
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+      {/* Add Book Form (compact card-like) */}
+      <div className="bg-white border border-gray-100 rounded-lg shadow-sm p-4 max-w-2xl">
+        <h3 className="text-lg font-semibold text-purple-800 mb-3">➕ Add New Book</h3>
+        <form onSubmit={handleAddBook} className="grid gap-3 grid-cols-1 sm:grid-cols-4 items-end">
           <input
             type="text"
-            placeholder="Search by title or author"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="p-2 border rounded-lg text-sm flex-1"
+            placeholder="Book Title"
+            className="col-span-1 sm:col-span-2 px-3 py-2 border rounded-md"
+            value={newBook.title}
+            onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
+            required
           />
-          <select
-            value={filters.genre}
-            onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
-            className="p-2 border rounded-lg text-sm"
-          >
-            <option value="">All Genres</option>
-            {genres.map((genre) => (
-              <option key={genre} value={genre}>
-                {genre}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.availability}
-            onChange={(e) => setFilters({ ...filters, availability: e.target.value })}
-            className="p-2 border rounded-lg text-sm"
-          >
-            <option value="">All Availability</option>
-            <option value="Available">Available</option>
-            <option value="Checked Out">Checked Out</option>
-          </select>
-          <select
-            value={filters.language}
-            onChange={(e) => setFilters({ ...filters, language: e.target.value })}
-            className="p-2 border rounded-lg text-sm"
-          >
-            <option value="">All Languages</option>
-            {languages.map((lang) => (
-              <option key={lang} value={lang}>
-                {lang}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-            className="p-2 border rounded-lg text-sm"
-          >
-            <option value="">All Types</option>
-            {types.map((type) => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+          <input
+            type="text"
+            placeholder="Author"
+            className="col-span-1 sm:col-span-1 px-3 py-2 border rounded-md"
+            value={newBook.author}
+            onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Category (e.g. Fiction)"
+            className="col-span-1 sm:col-span-1 px-3 py-2 border rounded-md"
+            value={newBook.category}
+            onChange={(e) => setNewBook({ ...newBook, category: e.target.value })}
+          />
 
-      {/* Add/Edit Form */}
-      <div className="bg-white p-6 rounded-xl shadow-lg mb-6">
-        <h3 className="text-lg font-semibold text-purple-900 mb-4">{editingId ? "Edit Book" : "Add Book"}</h3>
-        {errors.form && <p className="text-red-600 mb-4">{errors.form}</p>}
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <input
-              type="text"
-              placeholder="Title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="p-2 border rounded-lg text-sm w-full"
-              required
-            />
-            {errors.title && <p className="text-red-600 text-xs">{errors.title}</p>}
-          </div>
-          <div>
-            <input
-              type="text"
-              placeholder="Author"
-              value={form.author}
-              onChange={(e) => setForm({ ...form, author: e.target.value })}
-              className="p-2 border rounded-lg text-sm w-full"
-              required
-            />
-            {errors.author && <p className="text-red-600 text-xs">{errors.author}</p>}
-          </div>
-          <div>
-            <input
-              type="text"
-              placeholder="Price (e.g., $10.99)"
-              value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className="p-2 border rounded-lg text-sm w-full"
-            />
-            {errors.price && <p className="text-red-600 text-xs">{errors.price}</p>}
-          </div>
-          <div>
-            <input
-              type="text"
-              placeholder="Genre"
-              value={form.genre}
-              onChange={(e) => setForm({ ...form, genre: e.target.value })}
-              className="p-2 border rounded-lg text-sm w-full"
-            />
-          </div>
+          {/* Second row: location select + add button */}
           <select
-            value={form.availability}
-            onChange={(e) => setForm({ ...form, availability: e.target.value })}
-            className="p-2 border rounded-lg text-sm w-full"
+            value={newBook.location}
+            onChange={(e) => setNewBook({ ...newBook, location: e.target.value })}
+            className="px-3 py-2 border rounded-md w-full sm:w-auto"
           >
-            <option value="Available">Available</option>
-            <option value="Checked Out">Checked Out</option>
+            <option value="Library">Library</option>
+            <option value="Store">Store</option>
           </select>
-          <div>
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="p-2 border rounded-lg text-sm w-full"
-              required
-            >
-              <option value="store">Store</option>
-              <option value="library">Library</option>
-            </select>
-            {errors.type && <p className="text-red-600 text-xs">{errors.type}</p>}
-          </div>
-          <input
-            type="text"
-            placeholder="Language"
-            value={form.language}
-            onChange={(e) => setForm({ ...form, language: e.target.value })}
-            className="p-2 border rounded-lg text-sm w-full"
-          />
-          <input
-            type="date"
-            placeholder="Publication Date (YYYY-MM-DD)"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-            className="p-2 border rounded-lg text-sm w-full"
-          />
-          <input
-            type="url"
-            placeholder="Cover URL"
-            value={form.cover}
-            onChange={(e) => setForm({ ...form, cover: e.target.value })}
-            className="p-2 border rounded-lg text-sm w-full"
-          />
-          <input
-            type="url"
-            placeholder="Back Cover URL"
-            value={form.backCover}
-            onChange={(e) => setForm({ ...form, backCover: e.target.value })}
-            className="p-2 border rounded-lg text-sm w-full"
-          />
-          <input
-            type="text"
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="p-2 border rounded-lg text-sm w-full col-span-2"
-          />
-          <div className="col-span-2 flex gap-2">
+
+          <div className="sm:col-span-3">
             <button
               type="submit"
-              className="bg-purple-700 text-white p-2 rounded-lg hover:bg-purple-800 text-sm flex-1"
+              className="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 transition"
             >
-              {editingId ? "Update Book" : "Add Book"}
+              Add Book to {newBook.location}
             </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 text-sm flex-1"
-              >
-                Cancel
-              </button>
-            )}
           </div>
         </form>
-        {(form.cover || form.backCover) && (
-          <div className="mt-4 flex gap-4">
-            {form.cover && <img src={form.cover} alt="Cover Preview" className="w-24 h-32 object-cover rounded" />}
-            {form.backCover && (
-              <img src={form.backCover} alt="Back Cover Preview" className="w-24 h-32 object-cover rounded" />
-            )}
-          </div>
-        )}
       </div>
 
       {/* Book List */}
-      <div className="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
-        <h3 className="text-lg font-semibold text-purple-900 mb-4">Books</h3>
-        <table className="w-full text-sm min-w-[700px]">
-          <thead>
-            <tr className="text-left text-gray-600">
-              <th className="p-2">Title</th>
-              <th className="p-2">Author</th>
-              <th className="p-2">Price</th>
-              <th className="p-2">Availability</th>
-              <th className="p-2">Type</th>
-              <th className="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredBooks.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="p-2 text-center text-gray-600">
-                  No books found.
-                </td>
-              </tr>
-            ) : (
-              filteredBooks.map((book) => (
-                <tr key={book.id} className="border-t">
-                  <td className="p-2">{book.title}</td>
-                  <td className="p-2">{book.author}</td>
-                  <td className="p-2">{book.price || "N/A"}</td>
-                  <td className="p-2">{book.availability}</td>
-                  <td className="p-2">{book.type.charAt(0).toUpperCase() + book.type.slice(1)}</td>
-                  <td className="p-2">
+      <div>
+        <h3 className="text-lg font-semibold mb-4 text-purple-800">📖 Library & Store Books</h3>
+
+        {filteredBooks.length === 0 ? (
+          <p className="text-gray-500">No books found.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredBooks.map((book) => (
+              <div key={book.id} className="relative bg-white border rounded-lg p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-28 bg-gray-100 rounded-md flex items-center justify-center text-gray-400">
+                    {/* placeholder cover */}
+                    📘
+                  </div>
+
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-purple-900">{book.title}</h4>
+                    <p className="text-sm text-gray-600">by {book.author}</p>
+                    <p className="text-xs text-gray-500 mt-1">Category: {book.category || "—"}</p>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <span
+                        className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                          book.status === "Available"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {book.status}
+                      </span>
+
+                      <span className="inline-block px-2 py-1 text-xs text-purple-700 bg-purple-50 rounded">
+                        {book.location}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer actions */}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-xs text-gray-500">ID: {String(book.id).slice(-6)}</div>
+                  <div className="flex items-center gap-3">
+                    {/* future: add edit button */}
                     <button
-                      onClick={() => {
-                        setEditingId(book.id);
-                        setForm(book);
-                      }}
-                      className="bg-purple-700 text-white px-3 py-1 rounded-lg hover:bg-purple-800 text-sm mr-2"
+                      onClick={() => handleDelete(book.id)}
+                      className="text-red-600 text-sm font-medium hover:underline"
                     >
-                      Edit
+                      🗑️ Delete
                     </button>
-                    <button
-                      onClick={() => deleteBook(book.id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
-const Card = ({ title, value }) => (
-  <div className="bg-white p-6 rounded-xl shadow-lg">
-    <h3 className="text-lg font-semibold text-gray-600">{title}</h3>
-    <p className="text-2xl font-bold text-purple-700">{value}</p>
-  </div>
-);
 
 export default ManageBooks;

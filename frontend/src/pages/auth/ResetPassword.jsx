@@ -1,60 +1,43 @@
-import { Link, useNavigate } from "react-router-dom";
+// src/pages/auth/ResetPassword.jsx
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const ResetPassword = () => {
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
-    if (password !== confirmPassword) {
-      alert("❌ Passwords do not match");
-      return;
-    }
-    console.log("Reset Password:", { password }); // Mock submission
-    alert("✅ Password updated (mock)");
-    navigate("/auth/login");
+    setMessage(`Password reset link sent to ${email}`);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center px-4">
-      <div className="absolute top-4 left-4">
-        <Link to="/" className="text-purple-700 hover:underline text-sm font-medium">
-          Back to Home
-        </Link>
-      </div>
-      <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-purple-900 mb-6 text-center">Reset Password</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-purple-900 mb-1">New Password</label>
-            <input
-              type="password"
-              name="password"
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-              required
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-purple-900 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-              required
-            />
-          </div>
+    <div className="min-h-screen flex flex-col justify-center items-center bg-purple-50 p-4">
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-purple-700 mb-4">Reset Password</h2>
+        {message && <p className="text-green-500 text-sm mb-2">{message}</p>}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            required
+          />
           <button
             type="submit"
-            className="w-full bg-purple-700 text-white py-2 rounded-lg hover:bg-purple-800 text-sm font-medium"
+            className="bg-purple-700 hover:bg-purple-800 text-white py-2 rounded-lg font-medium"
           >
-            Update Password
+            Send Reset Link
           </button>
         </form>
-        <div className="mt-4 text-center">
-          <Link to="/auth/login" className="text-purple-700 hover:underline text-sm">
+        <div className="mt-4 flex justify-between text-sm">
+          <Link to="/auth/login" className="text-purple-700 hover:underline">
             Back to Login
+          </Link>
+          <Link to="/" className="text-purple-700 hover:underline">
+            Back Home
           </Link>
         </div>
       </div>

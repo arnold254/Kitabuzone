@@ -1,70 +1,101 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { LogOut } from "lucide-react";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 
 const AdminLayout = () => {
-  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    navigate("/auth/login");
+    localStorage.removeItem("user");
+    navigate("/");
   };
-
-  console.log("AdminLayout: Rendering admin sidebar");
 
   return (
     <div className="flex min-h-screen">
-      <aside className="bg-purple-700 text-white w-48 p-3 fixed top-0 left-0 h-full z-20 border-r border-purple-800 rounded-r-lg shadow-lg">
-        <div className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold text-white mb-4 pointer-events-none">Admin Panel</h2>
-          <nav className="flex flex-col gap-2">
-            <Link
-              to="/admin"
-              className="text-white text-xs py-2 px-2 rounded-md hover:bg-purple-800 transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/admin/books"
-              className="text-white text-xs py-2 px-2 rounded-md hover:bg-purple-800 transition-colors"
-            >
-              Manage Books
-            </Link>
-            <Link
-              to="/admin/users"
-              className="text-white text-xs py-2 px-2 rounded-md hover:bg-purple-800 transition-colors"
-            >
-              Manage Users
-            </Link>
-            <Link
-              to="/admin/sales"
-              className="text-white text-xs py-2 px-2 rounded-md hover:bg-purple-800 transition-colors"
-            >
-              Sales Reports
-            </Link>
-            <Link
-              to="/admin/lendings"
-              className="text-white text-xs py-2 px-2 rounded-md hover:bg-purple-800 transition-colors"
-            >
-              Lending Reports
-            </Link>
-            <Link
-              to="/admin/activities"
-              className="text-white text-xs py-2 px-2 rounded-md hover:bg-purple-800 transition-colors"
-            >
-              Activity Logs
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 text-white text-xs py-2 px-2 rounded-md hover:bg-purple-800 transition-colors"
-            >
-              <LogOut className="w-3 h-3" /> Logout
-            </button>
-          </nav>
+      {/* Sidebar */}
+      <aside className="w-56 bg-purple-100 text-purple-900 flex flex-col p-4">
+        <h2 className="text-xl font-bold mb-6">Admin Panel</h2>
+
+        <nav className="flex-1 space-y-3 mt-6">
+          <NavLink
+            to="/admin"
+            end
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-purple-200 font-semibold" : "hover:bg-purple-50"
+              }`
+            }
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
+            to="/admin/managebooks"
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-purple-200 font-semibold" : "hover:bg-purple-50"
+              }`
+            }
+          >
+            Manage Books
+          </NavLink>
+          <NavLink
+            to="/admin/manageusers"
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-purple-200 font-semibold" : "hover:bg-purple-50"
+              }`
+            }
+          >
+            Manage Users
+          </NavLink>
+          <NavLink
+            to="/admin/activitylogs"
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-purple-200 font-semibold" : "hover:bg-purple-50"
+              }`
+            }
+          >
+            Activity Logs
+          </NavLink>
+          <NavLink
+            to="/admin/borrowingreport"
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-purple-200 font-semibold" : "hover:bg-purple-50"
+              }`
+            }
+          >
+            Borrowing Report
+          </NavLink>
+          <NavLink
+            to="/admin/salesreport"
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-purple-200 font-semibold" : "hover:bg-purple-50"
+              }`
+            }
+          >
+            Sales Report
+          </NavLink>
+        </nav>
+
+        <div className="mt-auto space-y-3">
+          <NavLink
+            to="/library"
+            className="block px-3 py-2 rounded hover:bg-purple-50"
+          >
+            Library Express
+          </NavLink>
+          <button
+            onClick={handleLogout}
+            className="block w-full text-left px-3 py-2 rounded hover:bg-purple-50"
+          >
+            Logout
+          </button>
         </div>
       </aside>
-      <main className="flex-1 ml-48 p-6 bg-gray-50">
+
+      {/* Main content */}
+      <main className="flex-1 bg-gray-50 p-6">
         <Outlet />
       </main>
     </div>

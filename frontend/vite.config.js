@@ -1,16 +1,11 @@
 // vite.config.js
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000, // Ensure Vite runs on a specific port
-    open: true, // Automatically open browser
+    open: true, // <-- this line makes the browser open automatically
+    port: 5173, // optional, default is 5173
   },
-  resolve: {
-    alias: {
-      '@': '/src', // Optional: for easier imports
-    },
-  },
-});
+})

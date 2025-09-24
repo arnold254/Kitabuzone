@@ -1,61 +1,75 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+// src/pages/auth/Login.jsx
+import { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import LoginForm from "../../components/forms/LoginForm";
 
 const Login = () => {
-  const { login, user, isAuthLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [error, setError] = useState("");
 
-  const from = location.state?.from?.pathname || "/";
+  // Determine where to redirect after login
+  const from = location.state?.from || "/";
 
-  useEffect(() => {
-    if (!isAuthLoading && user && location.pathname !== "/admin") {
-      console.log("Login: User state updated:", user);
-      if (user.role === "admin") {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const role = login({ email, password }); // get role directly from login
+    if (role) {
+      // Redirect based on role
+      if (role === "admin") {
         navigate("/admin", { replace: true });
       } else {
         navigate(from, { replace: true });
       }
-    }
-  }, [user, isAuthLoading, navigate, from, location.pathname]);
-
-  const handleLogin = (formData) => {
-    setError("");
-    console.log("Login: Attempt with:", formData);
-
-    if (formData.email === "admin@example.com" && formData.password === "admin123") {
-      const userData = { role: "admin", email: formData.email };
-      console.log("Login: Logging in as admin:", userData);
-      login(userData);
-    } else if (formData.email === "user@example.com" && formData.password === "user123") {
-      const userData = { role: "user", email: formData.email };
-      console.log("Login: Logging in as user:", userData);
-      login(userData);
     } else {
-      setError("Invalid credentials");
+      setError("Invalid email or password");
     }
   };
 
-  if (isAuthLoading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center px-4">
-      <div className="absolute top-4 left-4">
-        <Link to="/" className="text-purple-700 hover:underline text-sm font-medium">Back to Home</Link>
-      </div>
-
-      <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-purple-900 mb-6 text-center">Login</h1>
-        {error && <p className="text-red-600 mb-4 text-center">{error}</p>}
-        <LoginForm onSubmit={handleLogin} />
-        <div className="mt-4 flex flex-col items-center gap-2">
-          <Link to="/auth/forgot-password" className="text-purple-700 hover:underline text-sm">Forgot Password?</Link>
-          <Link to="/auth/signup" className="text-purple-700 hover:underline text-sm">Don’t have an account? Signup</Link>
+    <div className="min-h-screen flex items-center justify-center bg-milky-white">
+      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold text-purple-900 mb-4">Login</h2>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="p-2 border border-purple-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-300"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="p-2 border border-purple-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-300"
+            required
+          />
+          <button
+            type="submit"
+            className="bg-purple-500 text-white py-2 rounded hover:bg-purple-600"
+          >
+            Login
+          </button>
+        </form>
+        <div className="mt-4 flex justify-between text-sm">
+          <Link to="/" className="text-purple-700 hover:underline">
+            &lt;-- Back Home
+          </Link>
+          <div className="flex gap-4">
+            <Link to="/auth/signup" className="text-purple-700 hover:underline">
+              Signup
+            </Link>
+            <Link to="/auth/reset" className="text-purple-700 hover:underline">
+              Reset Password
+            </Link>
+          </div>
         </div>
       </div>
     </div>

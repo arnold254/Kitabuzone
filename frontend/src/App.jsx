@@ -1,24 +1,22 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/layout/Header";
-import Store from "./pages/purchases/Store";
+import Store from "./pages/Store";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import ResetPassword from "./pages/auth/ResetPassword";
-import Library from "./pages/Borrowing/Library";
-import BorrowingCart from "./pages/Borrowing/BorrowingCart";
-import ViewBorrowedBooks from "./pages/Borrowing/ViewBorrowedBooks";
-import LibraryBookDetail from "./pages/Borrowing/BookDetail";
-import StoreBookDetail from "./pages/purchases/BookDetails";
+import Library from "./pages/Library";
+import BorrowingCart from "./pages/BorrowingCart";
+import ViewBorrowedBooks from "./pages/ViewBorrowedBooks";
+import LibraryBookDetail from "./pages/BookDetail";
+import StoreBookDetail from "./pages/BookDetails";
 
 // Payment pages
-import PaymentMethodCard from "./pages/purchases/PaymentMethodCard";
-import PaymentMethodEwallet from "./pages/purchases/PaymentMethodEwallet";
-import PaymentMethodMpesa from "./pages/purchases/PaymentMethodMpesa";
-import PaymentProcessing from "./pages/purchases/PaymentProcessing";
-import PaymentSuccessful from "./pages/purchases/PaymentSuccessful";
-import ShoppingCart from "./pages/purchases/ShoppingCart";
-import ViewOrders from "./pages/purchases/ViewOrders";
+import PaymentMethodCard from "./pages/PaymentMethodCard";
+import PaymentProcessing from "./pages/PaymentProcessing";
+import PaymentSuccessful from "./pages/PaymentSuccessful";
+import ShoppingCart from "./pages/ShoppingCart";
+import ViewOrders from "./pages/ViewOrders";
 
 // Admin pages
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -56,8 +54,6 @@ function AppWrapper() {
         <Route path="/shoppingCart" element={<ShoppingCart />} />
         <Route path="/viewOrders" element={<ViewOrders />} />
         <Route path="/payment/card" element={<PaymentMethodCard />} />
-        <Route path="/payment/ewallet" element={<PaymentMethodEwallet />} />
-        <Route path="/payment/mpesa" element={<PaymentMethodMpesa />} />
         <Route path="/payment/processing" element={<PaymentProcessing />} />
         <Route path="/payment/success" element={<PaymentSuccessful />} />
 

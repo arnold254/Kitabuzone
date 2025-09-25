@@ -5,9 +5,7 @@ from ..models import PurchaseCart, PurchaseCartItem, LendingCart, LendingCartIte
 
 bp = Blueprint("carts", __name__)
 
-# ---------------------------
-# Helpers
-# ---------------------------
+
 def _get_or_create_cart(user_id, cart_model):
     cart = cart_model.query.filter_by(user_id=user_id, checked_out=False).first()
     if not cart:
@@ -32,7 +30,7 @@ def add_purchase_cart_item():
         return jsonify({"error": "book_id required"}), 400
 
     book = Book.query.get_or_404(book_id)
-    if not book.is_available_for_sale:
+    if not book.is_available:
         return jsonify({"error": "Book not available for sale"}), 400
 
     cart = _get_or_create_cart(user_id, PurchaseCart)

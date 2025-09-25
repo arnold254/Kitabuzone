@@ -1,4 +1,3 @@
-# Models map to your diagram. Comments explain fields & relationships.
 from datetime import datetime
 from uuid import uuid4
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,84 +8,78 @@ from .extensions import db
 def gen_id():
     return str(uuid4())
 
-# Users
+# ----------------- Users -----------------
 class User(db.Model):
     __tablename__ = "users"
-    id = db.Column(db.String, primary_key=True, default=gen_id)  # uuid string
-    username = db.Column(db.String(255))
-    name = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), nullable=False, unique=True)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    username = db.Column(db.String(255), unique=True, nullable=True)
+    email = db.Column(db.String(255), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(50), default="customer")  # e.g., admin, customer
+    role = db.Column(db.String(50), default="customer")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # relationships
-    purchase_carts = db.relationship("PurchaseCart", back_populates="user", lazy="dynamic")
-    lending_carts = db.relationship("LendingCart", back_populates="user", lazy="dynamic")
-    orders = db.relationship("Order", back_populates="user", lazy="dynamic")
-    lending_requests = db.relationship("LendingRequest", back_populates="user", lazy="dynamic")
+    # Relationships
+    purchase_carts = db.relationship("PurchaseCart", backref=db.backref("user_backref"), lazy="dynamic")
+    lending_carts = db.relationship("LendingCart", backref=db.backref("user_backref"), lazy="dynamic")
+    orders = db.relationship("Order", backref=db.backref("user_backref"), lazy="dynamic", foreign_keys="[Order.user_id]")
+    lending_requests = db.relationship("LendingRequest", backref=db.backref("user_backref"), lazy="dynamic", foreign_keys="[LendingRequest.user_id]")
+    approved_orders = db.relationship("Order", backref=db.backref("approved_user_backref"), foreign_keys="[Order.approved_by]", lazy="dynamic")
+    approved_lending_requests = db.relationship("LendingRequest", backref=db.backref("approved_user_backref"), foreign_keys="[LendingRequest.approved_by]", lazy="dynamic")
+    payments = db.relationship("Payment", backref=db.backref("user_backref"), lazy="dynamic", foreign_keys="[Payment.user_id]")
+    returns = db.relationship("ReturnRequest", backref=db.backref("user_backref"), lazy="dynamic", foreign_keys="[ReturnRequest.user_id]")
 
     def set_password(self, raw_password: str):
-        """Hash and set the user's password."""
         self.password_hash = generate_password_hash(raw_password)
 
     def check_password(self, raw_password: str) -> bool:
-        """Return True if the password matches."""
         return check_password_hash(self.password_hash, raw_password)
 
     def generate_reset_token(self):
-        """Generate a JWT reset token using user id"""
         return create_access_token(
-            identity=str(self.id),
+            identity=self.id,
             additional_claims={"reset": True},
             expires_delta=current_app.config["RESET_TOKEN_EXPIRES"]
         )
 
     @staticmethod
     def verify_reset_token(token):
-        """Verify the JWT reset token and return the user if valid."""
         try:
             data = decode_token(token)
             if data.get("claims", {}).get("reset"):
-                user_id = data["sub"]
-                return User.query.get(user_id)
+                return User.query.get(data["sub"])
         except Exception:
             return None
-        return None
-    
+
     def to_dict(self):
         return {
             "id": self.id,
             "username": self.username,
-            "name": self.name,
             "email": self.email,
             "role": self.role,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
-    def __repr__(self):
-        return f"<User {self.email}>"
-
-#Books
+# ----------------- Books -----------------
 class Book(db.Model):
     __tablename__ = "books"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
     title = db.Column(db.String(255), nullable=False)
-    author = db.Column(db.String(255))
-    genre = db.Column(db.String(100))
-    description = db.Column(db.Text)
-    price = db.Column(db.Numeric(10, 2), nullable=True)  # price for sale
-    is_available_for_sale = db.Column(db.Boolean, default=True)
-    is_available_for_lending = db.Column(db.Boolean, default=True)
+    author = db.Column(db.String(255), nullable=True)
+    genre = db.Column(db.String(100), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    price = db.Column(db.Numeric(10, 2), nullable=True)
+    is_available = db.Column(db.Enum("available","unavailable", name="book_availability"), default="available")
+    is_library_copy = db.Column(db.Boolean, default=True)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
-    uploaded_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
+    uploaded_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
 
-    # relationships
-    purchase_items = db.relationship("PurchaseCartItem", back_populates="book", lazy="dynamic")
-    lending_items = db.relationship("LendingCartItem", back_populates="book", lazy="dynamic")
-    order_items = db.relationship("OrderItem", back_populates="book", lazy="dynamic")
-    lendings = db.relationship("Lending", back_populates="book", lazy="dynamic")
+    # Relationships
+    purchase_items = db.relationship("PurchaseCartItem", backref=db.backref("book_backref"), lazy="dynamic")
+    lending_items = db.relationship("LendingCartItem", backref=db.backref("book_backref"), lazy="dynamic")
+    order_items = db.relationship("OrderItem", backref=db.backref("book_backref"), lazy="dynamic")
+    lendings = db.relationship("LendingRequest", backref=db.backref("book_backref"), lazy="dynamic")
+    returns = db.relationship("ReturnRequest", backref=db.backref("book_backref"), lazy="dynamic")
 
     def to_dict(self):
         return {
@@ -95,133 +88,178 @@ class Book(db.Model):
             "author": self.author,
             "genre": self.genre,
             "description": self.description,
-            "price": str(self.price) if self.price is not None else None,
-            "is_available_for_sale": self.is_available_for_sale,
-            "is_available_for_lending": self.is_available_for_lending,
+            "price": float(self.price) if self.price else None,
+            "is_available": self.is_available,
+            "is_library_copy": self.is_library_copy,
             "uploaded_at": self.uploaded_at.isoformat() if self.uploaded_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "uploaded_by": self.uploaded_by
         }
 
-
-    def __repr__(self):
-        return f"<Book {self.title}>"
-
-# ---------- Purchase cart ----------
+# ----------------- Purchase Cart & Items -----------------
 class PurchaseCart(db.Model):
     __tablename__ = "purchase_carts"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     checked_out = db.Column(db.Boolean, default=False)
 
-    user = db.relationship("User", back_populates="purchase_carts")
-    items = db.relationship("PurchaseCartItem", back_populates="cart", lazy="dynamic")
+    items = db.relationship("PurchaseCartItem", backref=db.backref("cart_backref"), lazy="dynamic", cascade="all, delete-orphan")
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "checked_out": self.checked_out,
+            "items": [item.to_dict() for item in self.items]
+        }
 
 class PurchaseCartItem(db.Model):
     __tablename__ = "purchase_cart_items"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    cart_id = db.Column(db.String, db.ForeignKey("purchase_carts.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    cart_id = db.Column(db.String(50), db.ForeignKey("purchase_carts.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
 
-    cart = db.relationship("PurchaseCart", back_populates="items")
-    book = db.relationship("Book", back_populates="purchase_items")
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "cart_id": self.cart_id,
+            "book_id": self.book_id,
+            "quantity": self.quantity
+        }
 
-
-# ---------- Lending cart ----------
+# ----------------- Lending Cart & Items -----------------
 class LendingCart(db.Model):
     __tablename__ = "lending_carts"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     checked_out = db.Column(db.Boolean, default=False)
 
-    user = db.relationship("User", back_populates="lending_carts")
-    items = db.relationship("LendingCartItem", back_populates="cart", lazy="dynamic")
+    items = db.relationship("LendingCartItem", backref=db.backref("cart_backref"), lazy="dynamic", cascade="all, delete-orphan")
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "checked_out": self.checked_out,
+            "items": [item.to_dict() for item in self.items]
+        }
 
 class LendingCartItem(db.Model):
     __tablename__ = "lending_cart_items"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    cart_id = db.Column(db.String, db.ForeignKey("lending_carts.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    cart_id = db.Column(db.String(50), db.ForeignKey("lending_carts.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
 
-    cart = db.relationship("LendingCart", back_populates="items")
-    book = db.relationship("Book", back_populates="lending_items")
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "cart_id": self.cart_id,
+            "book_id": self.book_id,
+            "quantity": self.quantity
+        }
 
-
-# ---------- Orders (purchase) ----------
+# ----------------- Orders & Order Items -----------------
 class Order(db.Model):
     __tablename__ = "orders"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
-    cart_id = db.Column(db.String, db.ForeignKey("purchase_carts.id"), nullable=False)
-    status = db.Column(db.String(50), default="pending")  # pending/approved/rejected/completed
-    total_amount = db.Column(db.Numeric(10,2))
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    cart_id = db.Column(db.String(50), db.ForeignKey("purchase_carts.id"), nullable=False)
+    status = db.Column(db.String(50), default="pending")
+    total_amount = db.Column(db.Numeric(10,2), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    approved_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
+    approved_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
     approved_at = db.Column(db.DateTime, nullable=True)
     paid_at = db.Column(db.DateTime, nullable=True)
 
-    user = db.relationship("User", back_populates="orders")
-    items = db.relationship("OrderItem", back_populates="order", lazy="dynamic")
-    payments = db.relationship("Payment", back_populates="order", lazy="dynamic")
+    items = db.relationship("OrderItem", backref=db.backref("order_backref"), lazy="dynamic", cascade="all, delete-orphan")
+    payments = db.relationship("Payment", backref=db.backref("order_backref"), lazy="dynamic", cascade="all, delete-orphan")
 
+    def to_dict(self):
+        data = {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        # Convert datetime fields
+        for key in ["created_at", "approved_at", "paid_at"]:
+            if data.get(key):
+                data[key] = data[key].isoformat()
+        data["items"] = [item.to_dict() for item in self.items]
+        data["payments"] = [p.to_dict() for p in self.payments]
+        return data
 
 class OrderItem(db.Model):
     __tablename__ = "order_items"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    order_id = db.Column(db.String, db.ForeignKey("orders.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
-    quantity = db.Column(db.Integer, default=1)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    order_id = db.Column(db.String(50), db.ForeignKey("orders.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
 
-    order = db.relationship("Order", back_populates="items")
-    book = db.relationship("Book", back_populates="order_items")
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "order_id": self.order_id,
+            "book_id": self.book_id,
+            "quantity": self.quantity
+        }
 
-
-# ---------- Lending requests ----------
+# ----------------- Lending Requests -----------------
 class LendingRequest(db.Model):
     __tablename__ = "lending_requests"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
-    cart_id = db.Column(db.String, db.ForeignKey("lending_carts.id"), nullable=False)
-    status = db.Column(db.String(50), default="pending")  # pending/approved/rejected/returned
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    cart_id = db.Column(db.String(50), db.ForeignKey("lending_carts.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
+    status = db.Column(db.String(50), default="pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    approved_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
+    approved_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
     approved_at = db.Column(db.DateTime, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)
     returned_at = db.Column(db.DateTime, nullable=True)
 
-    user = db.relationship("User", back_populates="lending_requests")
+    return_requests = db.relationship("ReturnRequest", backref=db.backref("lending_request_backref"), lazy="dynamic", cascade="all, delete-orphan")
 
+    def to_dict(self):
+        data = {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        for key in ["created_at", "approved_at", "due_date", "returned_at"]:
+            if data.get(key):
+                data[key] = data[key].isoformat()
+        data["return_requests"] = [r.to_dict() for r in self.return_requests]
+        return data
 
-# ---------- Payments ----------
+# ----------------- Payments -----------------
 class Payment(db.Model):
     __tablename__ = "payments"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    order_id = db.Column(db.String, db.ForeignKey("orders.id"), nullable=False)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    order_id = db.Column(db.String(50), db.ForeignKey("orders.id"), nullable=False)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
     amount = db.Column(db.Numeric(10,2), nullable=False)
-    payment_method = db.Column(db.String(50))
+    payment_method = db.Column(db.String(50), nullable=True)
     paid_at = db.Column(db.DateTime, nullable=True)
 
-    order = db.relationship("Order", back_populates="payments")
+    def to_dict(self):
+        data = {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        if data.get("paid_at"):
+            data["paid_at"] = data["paid_at"].isoformat()
+        return data
 
-
-# ---------- Returns ----------
+# ----------------- Returns -----------------
 class ReturnRequest(db.Model):
     __tablename__ = "returns"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    lending_request_id = db.Column(db.String, db.ForeignKey("lending_requests.id"), nullable=False)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    lending_request_id = db.Column(db.String(50), db.ForeignKey("lending_requests.id"), nullable=False)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     requested_at = db.Column(db.DateTime, default=datetime.utcnow)
     processed_at = db.Column(db.DateTime, nullable=True)
-    status = db.Column(db.String(50), default="pending")  # pending/processed/denied
-    processed_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
+    status = db.Column(db.String(50), default="pending")
+    processed_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
 
-    def __repr__(self):
-        return f"<Return {self.id} - {self.status}>"
+    def to_dict(self):
+        data = {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        for key in ["requested_at", "processed_at"]:
+            if data.get(key):
+                data[key] = data[key].isoformat()
+        return data

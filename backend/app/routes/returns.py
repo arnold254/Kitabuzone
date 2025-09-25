@@ -6,9 +6,9 @@ from ..models import ReturnRequest, LendingRequest, User
 
 bp = Blueprint("returns", __name__)
 
-# ---------------------------
+
 # Helpers
-# ---------------------------
+
 def is_admin(user_id):
     user = User.query.get(user_id)
     return user and user.role == "admin"

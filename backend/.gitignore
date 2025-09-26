@@ -1,1 +1,20 @@
 backend/app/__pycache__
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local SQLite DB
+instance/*.db
+backend/instance/*.db
+
+# Alembic migration cache
+backend/backend/migrations/__pycache__/
+*.sqlite3
+
+# Node modules
+frontend/node_modules/
+
+# Virtual envs
+venv/
+.env/

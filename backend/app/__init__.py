@@ -21,8 +21,6 @@ def create_app(config_class=DevelopmentConfig):
     # Register blueprints
     from .routes.health import bp as health_bp
 
-    app.register_blueprint(health_bp, url_prefix="/")
-
     app.register_blueprint(health_bp, url_prefix="/health")
 
     from .routes.auth import bp as auth_bp
@@ -37,8 +35,8 @@ def create_app(config_class=DevelopmentConfig):
     from .routes.orders import bp as orders_bp
     app.register_blueprint(orders_bp, url_prefix="/orders")
 
-    from .routes.lendings import bp as lendings_bp
-    app.register_blueprint(lendings_bp, url_prefix="/lendings")
+    from .routes.lending import bp as lending_bp
+    app.register_blueprint(lending_bp, url_prefix="/lendings")
 
     from .routes.payments import bp as payments_bp
     app.register_blueprint(payments_bp, url_prefix="/payments")

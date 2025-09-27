@@ -1,10 +1,14 @@
 from flask import Flask
 from .config import Config
 from .extensions import db, migrate, jwt
+from flask_cors import CORS
 
 def create_app(config_class=Config):
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object(config_class)
+
+    # Enable CORS for frontend access
+    CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
     # Initialize extensions
     db.init_app(app)
@@ -35,6 +39,5 @@ def create_app(config_class=Config):
 
     from .routes.returns import bp as returns_bp
     app.register_blueprint(returns_bp, url_prefix="/returns")
-
 
     return app

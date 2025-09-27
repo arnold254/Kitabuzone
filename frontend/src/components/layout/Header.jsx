@@ -1,5 +1,5 @@
 // src/components/layout/Header.jsx
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 const Header = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuth(); // only need user
+  const location = useLocation();
 
   return (
     <header className="w-full bg-purple-50 text-purple-900 p-4 shadow-md sticky top-0 z-50">
@@ -28,12 +29,34 @@ const Header = () => {
 
         {/* Nav Links */}
         <div className="flex items-center gap-4">
-          <Link to="/library" className="hover:underline">Library</Link>
+          <Link to="/library" className="hover:underline">
+            Library
+          </Link>
 
+          {/* Only show when logged in */}
+          {user && (
+            <>
+              <Link to="/viewOrders" className="hover:underline">
+                My Orders
+              </Link>
+              {/* If we are inside purchases/:id, also show quick link */}
+              {location.pathname.startsWith("/purchases/") && (
+                <Link to="/viewOrders" className="hover:underline">
+                  View Orders
+                </Link>
+              )}
+            </>
+          )}
+
+          {/* Show login/signup when logged out */}
           {!user && (
             <>
-              <Link to="/auth/login" className="hover:underline">Login</Link>
-              <Link to="/auth/signup" className="hover:underline">Signup</Link>
+              <Link to="/auth/login" className="hover:underline">
+                Login
+              </Link>
+              <Link to="/auth/signup" className="hover:underline">
+                Signup
+              </Link>
             </>
           )}
         </div>

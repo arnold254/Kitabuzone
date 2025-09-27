@@ -1,3 +1,4 @@
+// src/pages/Store.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -36,14 +37,13 @@ const Store = () => {
     }
 
     try {
-      await fetch("http://localhost:5000/api/store/purchase", {
+      await fetch("http://localhost:5000/viewOrders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookId: book.id }),
+        body: JSON.stringify(book),
       });
-      alert(`You purchased: ${book.title}`);
-    } catch {
-      alert(`(Mock) You purchased: ${book.title}`);
+    } catch (err) {
+      console.error("Purchase failed, mock fallback:", err);
     }
   };
 
@@ -84,7 +84,7 @@ const Store = () => {
               <div
                 key={book.id}
                 className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-                onClick={() => navigate(`/purchases/${book.id}`)}  // ✅ FIXED ROUTE
+                onClick={() => navigate(`/purchases/${book.id}`)} // ✅ Goes to /purchases/:id
               >
                 <img src={book.cover} alt={book.title} className="w-full h-48 object-cover rounded mb-2"/>
                 <h3 className="font-bold text-purple-900">{book.title}</h3>

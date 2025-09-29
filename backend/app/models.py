@@ -1,59 +1,75 @@
-# Models map to your diagram. Comments explain fields & relationships.
 from datetime import datetime
-from uuid import uuid4
+import uuid
+from flask import current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, decode_token
-from flask import current_app
 from .extensions import db
 
 def gen_id():
-    return str(uuid4())
+    return str(uuid.uuid4())
 
-# Users
+# -------------------- USER --------------------
 class User(db.Model):
     __tablename__ = "users"
-    id = db.Column(db.String, primary_key=True, default=gen_id)  # uuid string
-    username = db.Column(db.String(255))
-    name = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), nullable=False, unique=True)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    username = db.Column(db.String(255), unique=True, nullable=True)
+    name = db.Column(db.String(255), nullable=True)
+    email = db.Column(db.String(255), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(50), default="customer")  # e.g., admin, customer
+    role = db.Column(db.String(50), default="customer")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reset_token = db.Column(db.String(255), nullable=True)
+    reset_token_expiration = db.Column(db.BigInteger, nullable=True)
 
-    # relationships
-    purchase_carts = db.relationship("PurchaseCart", back_populates="user", lazy="dynamic")
-    lending_carts = db.relationship("LendingCart", back_populates="user", lazy="dynamic")
-    orders = db.relationship("Order", back_populates="user", lazy="dynamic")
-    lending_requests = db.relationship("LendingRequest", back_populates="user", lazy="dynamic")
+    # Relationships
+    purchase_carts = db.relationship("PurchaseCart", backref="user", lazy="dynamic")
+    lending_carts = db.relationship("LendingCart", backref="user", lazy="dynamic")
+    orders = db.relationship("Order", back_populates="user", foreign_keys="[Order.user_id]", lazy="dynamic")
+    approved_orders = db.relationship("Order", back_populates="approved_user", foreign_keys="[Order.approved_by]", lazy="dynamic")
+    lending_requests = db.relationship("LendingRequest", back_populates="user", foreign_keys="[LendingRequest.user_id]", lazy="dynamic")
+    approved_lending_requests = db.relationship("LendingRequest", back_populates="approved_user", foreign_keys="[LendingRequest.approved_by]", lazy="dynamic")
+    lendings = db.relationship("Lending", back_populates="user", lazy="dynamic")
+    payments = db.relationship("Payment", backref="user", lazy="dynamic")
+    activity_logs = db.relationship("ActivityLog", backref="user", lazy="dynamic")
+    pending_requests = db.relationship("PendingRequest", back_populates="user", lazy="dynamic")
+    return_requests = db.relationship("ReturnRequest", back_populates="user", foreign_keys="[ReturnRequest.user_id]", lazy="dynamic")
+    processed_returns = db.relationship("ReturnRequest", back_populates="processed_by_user", foreign_keys="[ReturnRequest.processed_by]", lazy="dynamic")
 
+    # -------------------- Password methods --------------------
     def set_password(self, raw_password: str):
-        """Hash and set the user's password."""
         self.password_hash = generate_password_hash(raw_password)
 
     def check_password(self, raw_password: str) -> bool:
-        """Return True if the password matches."""
         return check_password_hash(self.password_hash, raw_password)
 
+    # -------------------- Reset token methods --------------------
     def generate_reset_token(self):
-        """Generate a JWT reset token using user id"""
-        return create_access_token(
-            identity=str(self.id),
+        self.reset_token = create_access_token(
+            identity=self.id,
             additional_claims={"reset": True},
             expires_delta=current_app.config["RESET_TOKEN_EXPIRES"]
         )
+        self.reset_token_expiration = int(datetime.utcnow().timestamp()) + current_app.config["RESET_TOKEN_EXPIRES"].total_seconds()
+        return self.reset_token
 
     @staticmethod
     def verify_reset_token(token):
-        """Verify the JWT reset token and return the user if valid."""
+        user = User.query.filter_by(reset_token=token).first()
+        if user and user.reset_token_expiration > int(datetime.utcnow().timestamp()):
+            return user
         try:
             data = decode_token(token)
             if data.get("claims", {}).get("reset"):
-                user_id = data["sub"]
-                return User.query.get(user_id)
+                return User.query.get(data["sub"])
         except Exception:
             return None
         return None
-    
+
+    def clear_reset_token(self):
+        self.reset_token = None
+        self.reset_token_expiration = None
+
+    # -------------------- Serialization --------------------
     def to_dict(self):
         return {
             "id": self.id,
@@ -61,167 +77,188 @@ class User(db.Model):
             "name": self.name,
             "email": self.email,
             "role": self.role,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
-    def __repr__(self):
-        return f"<User {self.email}>"
-
-#Books
+# -------------------- BOOK --------------------
 class Book(db.Model):
     __tablename__ = "books"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
     title = db.Column(db.String(255), nullable=False)
-    author = db.Column(db.String(255))
-    genre = db.Column(db.String(100))
-    description = db.Column(db.Text)
-    price = db.Column(db.Numeric(10, 2), nullable=True)  # price for sale
+    author = db.Column(db.String(255), nullable=False)
+    isbn = db.Column(db.String(20), unique=True, nullable=True)
+    category = db.Column(db.String(100), nullable=True)
+    price = db.Column(db.Numeric(10, 2), nullable=True)
+    copies_available = db.Column(db.Integer, default=1)
+    location = db.Column(db.String(50), default="Library")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    description = db.Column(db.Text, nullable=True)
     is_available_for_sale = db.Column(db.Boolean, default=True)
     is_available_for_lending = db.Column(db.Boolean, default=True)
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
-    uploaded_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
+    uploaded_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
+    cover = db.Column(db.String(255)) 
 
-    # relationships
-    purchase_items = db.relationship("PurchaseCartItem", back_populates="book", lazy="dynamic")
-    lending_items = db.relationship("LendingCartItem", back_populates="book", lazy="dynamic")
-    order_items = db.relationship("OrderItem", back_populates="book", lazy="dynamic")
+    # Relationships
+    purchase_items = db.relationship("PurchaseCartItem", backref="book", lazy="dynamic")
+    lending_items = db.relationship("LendingCartItem", backref="book", lazy="dynamic")
+    order_items = db.relationship("OrderItem", backref="book", lazy="dynamic")
     lendings = db.relationship("Lending", back_populates="book", lazy="dynamic")
+    lending_requests = db.relationship("LendingRequest", back_populates="book", lazy="dynamic")
+    return_requests = db.relationship("ReturnRequest", back_populates="book", lazy="dynamic")
+    pending_requests = db.relationship("PendingRequest", back_populates="book", lazy="dynamic")
 
     def to_dict(self):
         return {
             "id": self.id,
             "title": self.title,
             "author": self.author,
-            "genre": self.genre,
+            "isbn": self.isbn,
+            "category": self.category,
+            "price": float(self.price) if self.price else None,
+            "copies_available": self.copies_available,
+            "location": self.location,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
             "description": self.description,
-            "price": str(self.price) if self.price is not None else None,
             "is_available_for_sale": self.is_available_for_sale,
             "is_available_for_lending": self.is_available_for_lending,
-            "uploaded_at": self.uploaded_at.isoformat() if self.uploaded_at else None,
+            "uploaded_by": self.uploaded_by,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "uploaded_by": self.uploaded_by
-        }
+            "cover": self.cover or f"https://via.placeholder.com/150?text={self.title.replace(' ', '+')}"  # ✅ fallback
+            }
 
+# -------------------- PENDING REQUESTS --------------------
+class PendingRequest(db.Model):
+    __tablename__ = "pending_requests"
+    __table_args__ = {"extend_existing": True}
 
-    def __repr__(self):
-        return f"<Book {self.title}>"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey("books.id"), nullable=False)
+    action = db.Column(db.String(50), default="purchase")
+    status = db.Column(db.String(50), default="pending")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow) 
 
-# ---------- Purchase cart ----------
+    user = db.relationship("User", back_populates="pending_requests")
+    book = db.relationship("Book", back_populates="pending_requests")
+
+# -------------------- ORDERS --------------------
 class PurchaseCart(db.Model):
     __tablename__ = "purchase_carts"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    checked_out = db.Column(db.Boolean, default=False)
-
-    user = db.relationship("User", back_populates="purchase_carts")
-    items = db.relationship("PurchaseCartItem", back_populates="cart", lazy="dynamic")
-
+    items = db.relationship("PurchaseCartItem", backref="cart", lazy="dynamic")
 
 class PurchaseCartItem(db.Model):
     __tablename__ = "purchase_cart_items"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    cart_id = db.Column(db.String, db.ForeignKey("purchase_carts.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    cart_id = db.Column(db.String(50), db.ForeignKey("purchase_carts.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
 
-    cart = db.relationship("PurchaseCart", back_populates="items")
-    book = db.relationship("Book", back_populates="purchase_items")
-
-
-# ---------- Lending cart ----------
 class LendingCart(db.Model):
     __tablename__ = "lending_carts"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    checked_out = db.Column(db.Boolean, default=False)
-
-    user = db.relationship("User", back_populates="lending_carts")
-    items = db.relationship("LendingCartItem", back_populates="cart", lazy="dynamic")
-
+    items = db.relationship("LendingCartItem", backref="cart", lazy="dynamic")
 
 class LendingCartItem(db.Model):
     __tablename__ = "lending_cart_items"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    cart_id = db.Column(db.String, db.ForeignKey("lending_carts.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    cart_id = db.Column(db.String(50), db.ForeignKey("lending_carts.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
 
-    cart = db.relationship("LendingCart", back_populates="items")
-    book = db.relationship("Book", back_populates="lending_items")
-
-
-# ---------- Orders (purchase) ----------
 class Order(db.Model):
     __tablename__ = "orders"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
-    cart_id = db.Column(db.String, db.ForeignKey("purchase_carts.id"), nullable=False)
-    status = db.Column(db.String(50), default="pending")  # pending/approved/rejected/completed
-    total_amount = db.Column(db.Numeric(10,2))
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    cart_id = db.Column(db.String(50), db.ForeignKey("purchase_carts.id"), nullable=True)
+    status = db.Column(db.String(50), default="pending")
+    total_amount = db.Column(db.Numeric(10, 2), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    approved_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
+    approved_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
     approved_at = db.Column(db.DateTime, nullable=True)
     paid_at = db.Column(db.DateTime, nullable=True)
 
-    user = db.relationship("User", back_populates="orders")
-    items = db.relationship("OrderItem", back_populates="order", lazy="dynamic")
-    payments = db.relationship("Payment", back_populates="order", lazy="dynamic")
-
+    items = db.relationship("OrderItem", backref="order", lazy="dynamic")
+    user = db.relationship("User", back_populates="orders", foreign_keys=[user_id])
+    approved_user = db.relationship("User", back_populates="approved_orders", foreign_keys=[approved_by])
 
 class OrderItem(db.Model):
     __tablename__ = "order_items"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    order_id = db.Column(db.String, db.ForeignKey("orders.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    order_id = db.Column(db.String(50), db.ForeignKey("orders.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     quantity = db.Column(db.Integer, default=1)
 
-    order = db.relationship("Order", back_populates="items")
-    book = db.relationship("Book", back_populates="order_items")
-
-
-# ---------- Lending requests ----------
+# -------------------- LENDING REQUESTS --------------------
 class LendingRequest(db.Model):
     __tablename__ = "lending_requests"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
-    cart_id = db.Column(db.String, db.ForeignKey("lending_carts.id"), nullable=False)
-    status = db.Column(db.String(50), default="pending")  # pending/approved/rejected/returned
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
+    cart_id = db.Column(db.String(50), db.ForeignKey("lending_carts.id"), nullable=True)
+    status = db.Column(db.String(50), default="pending")
+    approved_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    approved_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
     approved_at = db.Column(db.DateTime, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)
     returned_at = db.Column(db.DateTime, nullable=True)
 
-    user = db.relationship("User", back_populates="lending_requests")
+    user = db.relationship("User", back_populates="lending_requests", foreign_keys=[user_id])
+    approved_user = db.relationship("User", back_populates="approved_lending_requests", foreign_keys=[approved_by])
+    book = db.relationship("Book", back_populates="lending_requests")
 
+# -------------------- LENDING --------------------
+class Lending(db.Model):
+    __tablename__ = "lendings"
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
+    status = db.Column(db.String(50), default="borrowed")
+    borrowed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    due_date = db.Column(db.DateTime, nullable=True)
+    returned_at = db.Column(db.DateTime, nullable=True)
 
-# ---------- Payments ----------
+    user = db.relationship("User", back_populates="lendings")
+    book = db.relationship("Book", back_populates="lendings")
+
+# -------------------- PAYMENT --------------------
 class Payment(db.Model):
     __tablename__ = "payments"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    order_id = db.Column(db.String, db.ForeignKey("orders.id"), nullable=False)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
-    amount = db.Column(db.Numeric(10,2), nullable=False)
-    payment_method = db.Column(db.String(50))
-    paid_at = db.Column(db.DateTime, nullable=True)
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    status = db.Column(db.String(50), default="pending")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    order = db.relationship("Order", back_populates="payments")
+# -------------------- LOGS --------------------
+class ActivityLog(db.Model):
+    __tablename__ = "activity_logs"
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    item = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    description = db.Column(db.Text, nullable=True)
 
-
-# ---------- Returns ----------
+# -------------------- RETURN REQUESTS --------------------
 class ReturnRequest(db.Model):
-    __tablename__ = "returns"
-    id = db.Column(db.String, primary_key=True, default=gen_id)
-    lending_request_id = db.Column(db.String, db.ForeignKey("lending_requests.id"), nullable=False)
-    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
-    book_id = db.Column(db.String, db.ForeignKey("books.id"), nullable=False)
-    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
-    processed_at = db.Column(db.DateTime, nullable=True)
-    status = db.Column(db.String(50), default="pending")  # pending/processed/denied
-    processed_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)
+    __tablename__ = "return_requests"
+    id = db.Column(db.String(50), primary_key=True, default=gen_id)
+    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
+    book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
+    lending_request_id = db.Column(db.String(50), db.ForeignKey("lending_requests.id"), nullable=True)
+    status = db.Column(db.String(50), default="pending")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_by = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=True)
 
-    def __repr__(self):
-        return f"<Return {self.id} - {self.status}>"
+    user = db.relationship("User", back_populates="return_requests", foreign_keys=[user_id])
+    processed_by_user = db.relationship("User", back_populates="processed_returns", foreign_keys=[processed_by])
+    book = db.relationship("Book", back_populates="return_requests")
+
+

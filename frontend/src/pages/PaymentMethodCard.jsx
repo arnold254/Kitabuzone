@@ -7,7 +7,7 @@ export default function PaymentMethodCard() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate('/paymentProcessing');
+    navigate('/payment/Processing');
   };
 
   const methods = [

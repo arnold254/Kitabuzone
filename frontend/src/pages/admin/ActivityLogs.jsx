@@ -9,6 +9,7 @@ const ActivityLogs = () => {
   const [filterAction, setFilterAction] = useState("All");
   const [filterDate, setFilterDate] = useState("");
 
+  // Fetch logs, pending requests, and possible actions
   useEffect(() => {
     API.get("/logs")
       .then(res => setLogs(res.data))
@@ -29,47 +30,52 @@ const ActivityLogs = () => {
     return matchAction && matchDate;
   });
 
-  const handleRequestAction = async (id, action) => {
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleString();
+
+  // ---------------------------
+  // Handle Approve / Decline
+  // ---------------------------
+  const handleRequestAction = async (reqId, action) => {
     if (!window.confirm(`Are you sure you want to ${action} this request?`)) return;
 
     try {
-      // 1️⃣ Patch the request (already adds to cart if approved)
-      await API.patch(`/pendingRequests/${id}`, { status: action });
+      // 1️⃣ PATCH the pending request
+      await API.patch(`/pendingRequests/${reqId}`, { status: action });
 
-      // Remove from pendingRequests locally
-      setPendingRequests(pendingRequests.filter(req => req.id !== id));
+      // 2️⃣ Remove locally
+      setPendingRequests(pendingRequests.filter(req => req.id !== reqId));
 
-      // 2️⃣ Trigger cart refresh in ShoppingCart.jsx
-      if (action === "approve") {
+      // 3️⃣ Trigger ShoppingCart refresh if approved
+      if (action.toLowerCase() === "approve") {
         window.dispatchEvent(new Event("new-approval"));
       }
+
+      console.log(`Request ${action} successfully.`);
     } catch (err) {
       console.error("Failed to update request:", err);
     }
   };
 
-  const formatDate = (dateStr) => new Date(dateStr).toLocaleString();
-
   return (
     <div className="p-6 space-y-10">
-      {/* Header & filters */}
+      {/* Header & Filters */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-purple-900">📝 Activity Logs</h2>
         <div className="flex items-center gap-3">
           <select
             value={filterAction}
-            onChange={(e) => setFilterAction(e.target.value)}
+            onChange={e => setFilterAction(e.target.value)}
             className="px-3 py-2 border rounded-md text-sm"
           >
             <option value="All">All Actions</option>
-            {actions.map(action => (
-              <option key={action} value={action}>{action}</option>
+            {actions.map(a => (
+              <option key={a} value={a}>{a}</option>
             ))}
           </select>
           <input
             type="date"
             value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
+            onChange={e => setFilterDate(e.target.value)}
             className="px-3 py-2 border rounded-md text-sm"
           />
         </div>
@@ -87,9 +93,6 @@ const ActivityLogs = () => {
                 <h3 className="font-semibold text-purple-800">{req.user}</h3>
                 <p className="text-gray-600 text-sm">
                   📚 Book: <span className="font-medium">{req.book?.title || "Unknown Book"}</span>
-                </p>
-                <p className="text-gray-600 text-sm">
-                  📝 Action: <span className="font-medium">{req.action}</span>
                 </p>
                 <p className="text-gray-600 text-sm">
                   Author: <span className="font-medium">{req.book?.author || "Unknown"}</span>

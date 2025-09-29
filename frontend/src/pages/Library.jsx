@@ -137,10 +137,11 @@ const Library = () => {
                 onClick={() => navigate(`/bookDetails/${book.id}`)}
               >
                 <img
-                  src={book.cover || `https://via.placeholder.com/150?text=${book.title.replace(' ', '+')}`}
-                  alt={book.title}
-                  className="w-full h-48 object-cover rounded mb-2"
+                 src={book.cover ? `http://127.0.0.1:5000${book.cover}` : `https://via.placeholder.com/150?text=${book.title.replace(' ', '+')}`}
+                 alt={book.title}
+                 className="w-full h-48 object-cover rounded mb-2"
                 />
+
                 <h3 className="font-bold text-purple-900">{book.title}</h3>
                 <p className="text-gray-600">{book.author}</p>
                 <button

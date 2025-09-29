@@ -82,46 +82,37 @@ const Store = () => {
         {filteredBooks.length === 0 ? (
           <p className="text-gray-600">No books found in the Store.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredBooks.map((book) => (
               <div
                 key={book.id}
-                className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition cursor-pointer overflow-hidden"
+                className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
                 onClick={() => navigate(`/purchases/${book.id}`)}
               >
-                <div className="w-full h-80 bg-gray-100 flex items-center justify-center">
-                  {book.cover ? (
-                    <img
-                      src={book.cover}
-                      alt={book.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-400 text-6xl">📘</span>
-                  )}
+                {/* Book Cover */}
+                <img
+                  src={book.cover ? `http://127.0.0.1:5000${book.cover}` : `https://via.placeholder.com/150?text=${book.title.replace(' ', '+')}`}
+                  alt={book.title}
+                  className="w-full h-48 object-cover rounded mb-2"
+                />
+
+                {/* Title and Author */}
+                <div>
+                  <h3 className="font-bold text-purple-900 mb-1">{book.title}</h3>
+                  <p className="text-gray-600 text-sm mb-1">{book.author}</p>
+                  <p className="text-purple-900 font-semibold text-sm">{book.price ? `$${book.price}` : "Price N/A"}</p>
                 </div>
 
-                <div className="p-6 flex flex-col justify-between h-72">
-                  <div>
-                    <h3 className="font-bold text-purple-900 text-xl mb-2">
-                      {book.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-2">{book.author}</p>
-                    <p className="text-purple-900 font-semibold text-sm">
-                      {book.price ? `$${book.price}` : "Price N/A"}
-                    </p>
-                  </div>
-
-                  <button
-                    className="mt-4 w-full bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 transition"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePurchase(book);
-                    }}
-                  >
-                    Purchase
-                  </button>
-                </div>
+                {/* Purchase Button */}
+                <button
+                  className="mt-2 w-full bg-purple-500 text-white py-1 rounded hover:bg-purple-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePurchase(book);
+                  }}
+                >
+                  Purchase
+                </button>
               </div>
             ))}
           </div>

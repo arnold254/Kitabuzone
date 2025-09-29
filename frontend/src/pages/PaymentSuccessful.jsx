@@ -1,8 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function PaymentSuccessful() {
   return (
-    <div className="bg-gray-50 min-h-screen flex items-center justify-center px-4">
+    <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
         {/* Animated Checkmark */}
         <div className="flex justify-center mb-4">
@@ -27,6 +28,14 @@ export default function PaymentSuccessful() {
         <p className="text-sm text-gray-600 mt-2">
           Thank you! Your transaction has been completed.
         </p>
+
+        {/* Home Link */}
+        <Link
+          to="/"
+          className="mt-6 inline-block px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+        >
+          🏠 Back to Home
+        </Link>
       </div>
 
       {/* Tailwind Custom Animations */}

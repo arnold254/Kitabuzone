@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..extensions import db
 from ..models import PendingRequest, User
@@ -28,6 +28,7 @@ def create_request():
     db.session.add(pending)
     db.session.commit()
 
+    print(f"Pending request created: {pending.id} for user {user_id}")
     return jsonify({"message": "Request submitted", "id": pending.id}), 201
 
 # ---------------------------
@@ -84,32 +85,42 @@ def update_request(request_id):
 
     pending = PendingRequest.query.get_or_404(request_id)
     pending.status = new_status
-    db.session.commit()  # first commit the status
+    db.session.commit()
+    print(f"Pending request {pending.id} updated to {new_status}")
 
     # ---------------------------
     # If approved, add to PurchaseCart
     # ---------------------------
-    if new_status.lower() == "approved":
+    if new_status.lower() in ["approve", "approved"]:
         from ..models import PurchaseCart, PurchaseCartItem
-        import requests
+
+        print("Adding book to cart for user:", pending.user_id)
+        print("Book ID:", pending.book_id)
 
         # Find or create the user's cart
         cart = PurchaseCart.query.filter_by(user_id=pending.user_id).first()
         if not cart:
             cart = PurchaseCart(user_id=pending.user_id)
             db.session.add(cart)
-            db.session.commit()  # ensure cart.id exists
+            db.session.commit()
+            print("Created new cart for user:", cart.id)
 
-        # Add the approved book as an item
+        # Add the approved book as an item (avoid duplicates)
         existing_item = PurchaseCartItem.query.filter_by(
             cart_id=cart.id, book_id=pending.book_id
         ).first()
         if existing_item:
             existing_item.quantity += 1
+            print(f"Increased quantity for book {pending.book_id} in cart {cart.id}")
         else:
             item = PurchaseCartItem(cart_id=cart.id, book_id=pending.book_id, quantity=1)
             db.session.add(item)
+            print(f"Added book {pending.book_id} to cart {cart.id}")
+
         db.session.commit()  # commit items
+
+        print("Cart found:", cart.id)
+        print("Cart items count:", len(list(cart.items)) if cart else 0)
 
     # ---------------------------
     # Log the action
@@ -122,5 +133,6 @@ def update_request(request_id):
     )
     db.session.add(log)
     db.session.commit()
+    print(f"Action logged for request {pending.id}")
 
     return jsonify({"message": f"Request {new_status} and logged"}), 200

@@ -17,9 +17,9 @@ def get_cart():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # Find the user's purchase cart
+    # Find or create the user's purchase cart
     cart = PurchaseCart.query.filter_by(user_id=user_id).first()
-    if not cart or not cart.items:
+    if not cart:
         return jsonify({"cart": [], "count": 0}), 200
 
     items = []
@@ -57,8 +57,7 @@ def add_to_cart():
         cart = PurchaseCart(user_id=user_id)
         db.session.add(cart)
         db.session.commit()  # ensure cart.id exists
-
-    from ..models import PurchaseCartItem
+        print(f"Created new cart for user {user_id}")
 
     existing_item = PurchaseCartItem.query.filter_by(
         cart_id=cart.id, book_id=book_id
@@ -66,9 +65,11 @@ def add_to_cart():
 
     if existing_item:
         existing_item.quantity += 1
+        print(f"Increased quantity for book {book_id} in cart {cart.id}")
     else:
         item = PurchaseCartItem(cart_id=cart.id, book_id=book_id, quantity=1)
         db.session.add(item)
+        print(f"Added book {book_id} to cart {cart.id}")
 
     db.session.commit()
     return jsonify({"message": "Added to cart"}), 201

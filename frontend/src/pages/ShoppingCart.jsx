@@ -25,13 +25,20 @@ export default function ShoppingCart() {
     fetchCart();
   }, [user, refreshFlag]); // refresh when user changes or refreshFlag toggles
 
-  // Optional: you can trigger refresh after approval from ActivityLogs
+  // Listen for new approvals from admin actions
   useEffect(() => {
     const handleNewApproval = () => setRefreshFlag(prev => !prev);
-    // You could implement a global event emitter or context to notify this
     window.addEventListener("new-approval", handleNewApproval);
     return () => window.removeEventListener("new-approval", handleNewApproval);
   }, []);
+
+  // Polling fallback: fetch cart every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchCart();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const totalAmount = cartOrders.reduce(
     (sum, item) => sum + (item.price || 0) * (item.quantity || 1),

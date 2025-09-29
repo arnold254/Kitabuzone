@@ -14,7 +14,7 @@ def get_logs():
             "action": log.action,
             "description": log.item,
             "date": log.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "admin_id": log.admin_id
+            "user_id": log.user_id 
         }
         for log in logs
     ]), 200

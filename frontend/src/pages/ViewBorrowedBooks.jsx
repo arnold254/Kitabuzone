@@ -1,78 +1,79 @@
-import React, { useMemo } from 'react';
+// src/pages/ViewBorrowedBooks.jsx
+import { useBorrowedBooks } from "../context/BorrowedBooksContext";
+import { format } from "date-fns";
+import { useEffect } from "react";
+import API from "../api";
 
-const orders = [
-  { id: 'FIG-112', title: 'The Great Gatsby', genre: 'Classic', status: 'Pending Approval', deliveryDate: 'Dec 5', author: 'F. Scott Fitzgerald' },
-  { id: 'FIG-113', title: 'Beloved', genre: 'Historical Fiction', status: 'Shipped', deliveryDate: 'Dec 5', author: 'Toni Morrison' },
-  { id: 'FIG-114', title: 'Dune', genre: 'Science Fiction', status: 'Cancelled', deliveryDate: 'Dec 5', author: 'Frank Herbert' },
-  { id: 'FIG-115', title: 'Atomic Habits', genre: 'Self Improvement', status: 'Delivered', deliveryDate: 'Dec 5', author: 'James Clear' },
-  { id: 'FIG-116', title: 'The Da Vinci Code', genre: 'Thriller', status: 'Cancelled', deliveryDate: 'Dec 5', author: 'Dan Brown' },
-  { id: 'FIG-117', title: 'The Hobbit', genre: 'Fantasy Adventure', status: 'Shipped', deliveryDate: 'Dec 5', author: 'J.R.R. Tolkien' },
-  { id: 'FIG-118', title: 'Pride and Prejudice', genre: 'Romance', status: 'Delivered', deliveryDate: 'Dec 5', author: 'Jane Austen' },
-  { id: 'FIG-119', title: 'Dracula', genre: 'Gothic Horror', status: 'Cancelled', deliveryDate: 'Dec 5', author: 'Bram Stoker' },
-  { id: 'FIG-120', title: 'The 48 Laws of Power', genre: 'Strategy', status: 'Approved', deliveryDate: 'Dec 5', author: 'Robert Greene' },
-  { id: 'FIG-121', title: 'The Art of War', genre: 'Philosophy', status: 'Approved', deliveryDate: 'Dec 5', author: 'Sun Tzu' },
-];
+const ViewBorrowedBooks = () => {
+  const { requests, setRequests } = useBorrowedBooks();
 
-export default function ViewBorrowedBooks() {
-  
-  const hasApproved = useMemo(() => orders.some(order => order.status === 'Approved'), []);
-  
-    return (
-      <div className="flex flex-col items-center mt-10 px-4">
-        <div className="w-full max-w-6xl">
-          <h1 className="text-lg font-semibold mb-4 text-left">Borrowed Books</h1>
-  
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-left border-b">Order #</th>
-                  <th className="px-4 py-2 text-left border-b">Title</th>
-                  <th className="px-4 py-2 text-left border-b">Genre</th>
-                  <th className="px-4 py-2 text-left border-b">Order Status</th>
-                  <th className="px-4 py-2 text-left border-b">Delivery Date</th>
-                  <th className="px-4 py-2 text-left border-b">Author</th>
-                  <th className="px-4 py-2 text-center border-b">Cancel</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map(order => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border-b">{order.id}</td>
-                    <td className="px-4 py-2 border-b">{order.title}</td>
-                    <td className="px-4 py-2 border-b">{order.genre}</td>
-                    <td className="px-4 py-2 border-b">{order.status}</td>
-                    <td className="px-4 py-2 border-b">{order.deliveryDate}</td>
-                    <td className="px-4 py-2 border-b">{order.author}</td>
-                    <td className="px-4 py-2 border-b text-center">
-                      <button
-                        className="text-red-600 hover:text-red-800"
-                        onClick={() => alert(`Cancel order ${order.id}`)}
-                      >
-                        🗑️
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-  
-          <div className="mt-6 flex justify-center">
-            <button
-              className={`px-6 py-2 rounded-md font-medium transition-colors duration-200 ${
-                hasApproved
-                  ? 'bg-black text-white hover:bg-gray-900'
-                  : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-              }`}
-              disabled={!hasApproved}
-              onClick={() => alert('Proceed to shopping cart')}
-            >
-              Go to Borrowing Cart
-            </button>
-          </div>
-  
+  // Fetch latest requests on mount
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const res = await API.get("/pendingRequests"); // fetch user requests
+        setRequests(res.data);
+      } catch (err) {
+        console.error("Failed to fetch borrowed requests:", err);
+      }
+    };
+    fetchRequests();
+  }, [setRequests]);
+
+  const handleCancel = async (id) => {
+    if (window.confirm("Are you sure you want to cancel this request?")) {
+      try {
+        await API.patch(`/pendingRequests/${id}`, { status: "cancelled" });
+        setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "cancelled" } : r));
+      } catch (err) {
+        console.error("Failed to cancel request:", err);
+        alert("Could not cancel request.");
+      }
+    }
+  };
+
+  return (
+    <div className="p-6 space-y-6 min-h-screen bg-milky-white">
+      <h1 className="text-2xl font-bold text-purple-900 mb-4">📚 Borrowed Books</h1>
+
+      {requests.length === 0 ? (
+        <p className="text-gray-500">No borrowed books yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {requests.map(req => (
+            <div key={req.id} className="bg-white p-4 rounded-lg shadow-sm flex flex-col justify-between">
+              <div>
+                <h2 className="font-bold text-purple-900 mb-1">{req.book?.title || "Unknown Book"}</h2>
+                <p className="text-gray-600 text-sm mb-1">Author: {req.book?.author || "Unknown"}</p>
+                <p className="text-gray-600 text-sm mb-1">Genre: {req.book?.genre || "Unknown"}</p>
+                <p className="text-gray-600 text-sm mb-1">Price: ${req.book?.price || 0}</p>
+                <p className="text-gray-500 text-xs mb-1">Requested: {req.created_at ? format(new Date(req.created_at), "PPP p") : "-"}</p>
+                <span className={`inline-block px-2 py-1 text-xs rounded font-medium ${
+                  req.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                  req.status === "approved" ? "bg-green-100 text-green-700" :
+                  req.status === "cancelled" ? "bg-red-100 text-red-700" :
+                  "bg-gray-100 text-gray-700"
+                }`}>
+                  {req.status}
+                </span>
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                {req.status === "pending" && (
+                  <button
+                    onClick={() => handleCancel(req.id)}
+                    className="flex-1 bg-red-600 text-white text-sm px-2 py-1 rounded hover:bg-red-700"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-    )
-  }
+      )}
+    </div>
+  );
+};
+
+export default ViewBorrowedBooks;

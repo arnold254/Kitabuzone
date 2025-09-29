@@ -1,67 +1,42 @@
-import { Card, CardContent } from "../../components/ui/Card"
+// src/pages/admin/Dashboard.jsx
+import { useState, useEffect } from "react";
+import API from "../../api";
 
 const Dashboard = () => {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalBooks: 0,
+    borrowedBooks: 0,
+    pendingRequests: 0,
+  });
+
+  useEffect(() => {
+    API.get("/dashboardStats")
+      .then(res => setStats(res.data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const statCards = [
+    { label: "Total Users", value: stats.totalUsers, color: "bg-purple-600" },
+    { label: "Total Books", value: stats.totalBooks, color: "bg-indigo-600" },
+    { label: "Borrowed Books", value: stats.borrowedBooks, color: "bg-blue-600" },
+    { label: "Pending Requests", value: stats.pendingRequests, color: "bg-red-600" },
+  ];
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-purple-900 mb-6">Admin Dashboard</h1>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-purple-50 shadow-sm hover:shadow-md transition rounded-2xl">
-          <CardContent className="p-5">
-            <h2 className="text-xl font-semibold text-purple-800">📚 Total Books</h2>
-            <p className="text-3xl font-bold mt-2">1,245</p>
-            <p className="text-sm text-gray-500">In library & store</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-purple-50 shadow-sm hover:shadow-md transition rounded-2xl">
-          <CardContent className="p-5">
-            <h2 className="text-xl font-semibold text-purple-800">👥 Users</h2>
-            <p className="text-3xl font-bold mt-2">842</p>
-            <p className="text-sm text-gray-500">Active members</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-purple-50 shadow-sm hover:shadow-md transition rounded-2xl">
-          <CardContent className="p-5">
-            <h2 className="text-xl font-semibold text-purple-800">📖 Borrowed</h2>
-            <p className="text-3xl font-bold mt-2">320</p>
-            <p className="text-sm text-gray-500">Currently borrowed books</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-purple-50 shadow-sm hover:shadow-md transition rounded-2xl">
-          <CardContent className="p-5">
-            <h2 className="text-xl font-semibold text-purple-800">💸 Sales</h2>
-            <p className="text-3xl font-bold mt-2">$5,720</p>
-            <p className="text-sm text-gray-500">This month</p>
-          </CardContent>
-        </Card>
+    <div className="p-6 space-y-6">
+      <h2 className="text-2xl font-bold text-purple-900">📊 Admin Dashboard</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        {statCards.map((card) => (
+          <div
+            key={card.label}
+            className={`p-6 rounded-lg shadow-md text-white ${card.color}`}
+          >
+            <p className="text-sm">{card.label}</p>
+            <p className="text-2xl font-bold mt-2">{card.value}</p>
+          </div>
+        ))}
       </div>
-
-      {/* Announcements */}
-      <Card className="bg-white shadow-sm hover:shadow-md transition rounded-2xl">
-        <CardContent className="p-5">
-          <h2 className="text-xl font-semibold text-purple-800 mb-3">📢 Announcements</h2>
-          <ul className="space-y-2 text-gray-700">
-            <li>✍️ New book by Author A releasing next week.</li>
-            <li>📚 Library system maintenance on Saturday.</li>
-            <li>💡 Suggestion: Improve search filters.</li>
-          </ul>
-        </CardContent>
-      </Card>
-
-      {/* System Health */}
-      <Card className="bg-purple-50 shadow-sm hover:shadow-md transition rounded-2xl">
-        <CardContent className="p-5">
-          <h2 className="text-xl font-semibold text-purple-800 mb-3">⚙️ System Health</h2>
-          <p className="text-gray-700">
-            ✅ All systems running smoothly. No issues detected in borrowing or purchasing
-            modules. Database synced at 2:35 PM.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 };

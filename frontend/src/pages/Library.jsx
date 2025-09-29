@@ -1,31 +1,27 @@
+// src/pages/Library.jsx
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
-const mockLibraryBooks = [
-  { id: 101, title: "Clean Code", author: "Robert C. Martin", genre: "Programming", language: "English", cover: "https://via.placeholder.com/150x200.png?text=Clean+Code" },
-  { id: 102, title: "The Pragmatic Programmer", author: "Andrew Hunt", genre: "Programming", language: "English", cover: "https://via.placeholder.com/150x200.png?text=Pragmatic+Programmer" },
-  { id: 103, title: "Introduction to Algorithms", author: "Thomas H. Cormen", genre: "Computer Science", language: "English", cover: "https://via.placeholder.com/150x200.png?text=Algorithms" },
-];
+import { useBorrowedBooks } from "../context/BorrowedBooksContext";
+import API from "../api";
 
 const Library = () => {
   const [books, setBooks] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [genreFilter, setGenreFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
   const [languageFilter, setLanguageFilter] = useState("");
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const { requests, setRequests } = useBorrowedBooks();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/library/books")
-      .then(res => {
-        if (!res.ok) throw new Error("Backend not running, using mock data");
-        return res.json();
-      })
-      .then(data => setBooks(data))
-      .catch(() => setBooks(mockLibraryBooks));
+    API.get("/books?location=Library")
+      .then(res => setBooks(res.data))
+      .catch(err => {
+        console.error("Failed to fetch library books:", err);
+        setBooks([]);
+      });
   }, []);
 
   const filteredBooks = books.filter(book =>
@@ -34,14 +30,43 @@ const Library = () => {
     (!languageFilter || book.language === languageFilter)
   );
 
-  const handleBorrow = (book) => {
+  const handleBorrow = async (book) => {
     if (!isLoggedIn) {
-      alert("Please sign in to borrow books!");
+      alert("Please login to borrow books!");
       navigate("/auth/login", { state: { from: "/library" } });
       return;
     }
-    // ✅ Redirect to borrowing cart
-    navigate("/borrowingCart");
+
+    if (!book.id) {
+      console.error("Book id is missing", book);
+      alert("Cannot borrow this book. Invalid data.");
+      return;
+    }
+
+    try {
+      const res = await API.post("/pendingRequests", {
+        book_id: book.id,
+        action: "borrow",
+      });
+
+      alert("Borrow request submitted! Waiting for admin approval.");
+
+      // Update reactive borrowed requests
+      setRequests(prev => [
+        {
+          id: res.data.id,
+          book,
+          action: "borrow",
+          status: "pending",
+          created_at: new Date().toISOString(),
+        },
+        ...prev
+      ]);
+
+    } catch (err) {
+      console.error("Failed to submit borrow request:", err);
+      alert("Failed to submit borrow request.");
+    }
   };
 
   return (
@@ -52,20 +77,13 @@ const Library = () => {
         <div className="flex flex-col gap-3">
           <select
             className="p-2 rounded border border-purple-300"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-          >
-            <option value="">Newest First</option>
-            <option value="oldest">Oldest First</option>
-          </select>
-          <select
-            className="p-2 rounded border border-purple-300"
             value={genreFilter}
             onChange={(e) => setGenreFilter(e.target.value)}
           >
             <option value="">All Genres</option>
             <option value="Programming">Programming</option>
             <option value="Computer Science">Computer Science</option>
+            <option value="Fiction">Fiction</option>
           </select>
           <select
             className="p-2 rounded border border-purple-300"
@@ -94,14 +112,12 @@ const Library = () => {
               className="w-full pl-8 pr-3 py-1 rounded border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
             />
           </div>
-
-          {!isLoggedIn && (
+          {!isLoggedIn ? (
             <div className="flex-shrink-0 flex gap-4">
               <Link to="/auth/login" className="hover:underline text-purple-900">Login</Link>
               <Link to="/auth/signup" className="hover:underline text-purple-900">Signup</Link>
             </div>
-          )}
-          {isLoggedIn && (
+          ) : (
             <div className="flex-shrink-0 flex gap-4">
               <Link to="/borrowingCart" className="text-purple-900 hover:underline">Borrowing Cart</Link>
               <Link to="/viewBorrowedBooks" className="text-purple-900 hover:underline">View Borrowed</Link>
@@ -112,7 +128,7 @@ const Library = () => {
         {/* Books Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredBooks.length === 0 ? (
-            <p className="text-purple-900">No books found.</p>
+            <p className="text-purple-900">No books found in the Library.</p>
           ) : (
             filteredBooks.map(book => (
               <div
@@ -120,7 +136,11 @@ const Library = () => {
                 className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
                 onClick={() => navigate(`/bookDetails/${book.id}`)}
               >
-                <img src={book.cover} alt={book.title} className="w-full h-48 object-cover rounded mb-2" />
+                <img
+                  src={book.cover || `https://via.placeholder.com/150?text=${book.title.replace(' ', '+')}`}
+                  alt={book.title}
+                  className="w-full h-48 object-cover rounded mb-2"
+                />
                 <h3 className="font-bold text-purple-900">{book.title}</h3>
                 <p className="text-gray-600">{book.author}</p>
                 <button

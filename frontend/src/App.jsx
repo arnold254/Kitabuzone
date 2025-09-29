@@ -27,6 +27,9 @@ import ActivityLogs from "./pages/admin/ActivityLogs";
 import BorrowingReport from "./pages/admin/BorrowingReport";
 import SalesReport from "./pages/admin/SalesReport";
 
+// BorrowedBooks Context
+import { BorrowedBooksProvider } from "./context/BorrowedBooksContext";
+
 function AppWrapper() {
   const location = useLocation();
   const showHeader = location.pathname === "/"; // only show header on home
@@ -73,9 +76,11 @@ function AppWrapper() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppWrapper />
-    </BrowserRouter>
+    <BorrowedBooksProvider>
+      <BrowserRouter>
+        <AppWrapper />
+      </BrowserRouter>
+    </BorrowedBooksProvider>
   );
 }
 

@@ -14,18 +14,23 @@ const Login = () => {
   // Determine where to redirect after login
   const from = location.state?.from || "/";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const role = login({ email, password }); // get role directly from login
-    if (role) {
-      // Redirect based on role
-      if (role === "admin") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate(from, { replace: true });
+    setError(""); // clear previous errors
+
+    try {
+      const user = await login({ email, password });
+
+      if (user) {
+        // Redirect based on role
+        if (user.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else {
+          navigate(from, { replace: true });
+        }
       }
-    } else {
-      setError("Invalid email or password");
+    } catch (err) {
+      setError(err.message || "Invalid email or password");
     }
   };
 

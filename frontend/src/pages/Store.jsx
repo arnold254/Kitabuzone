@@ -1,32 +1,25 @@
-// src/pages/Store.jsx
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-
-const mockStoreBooks = [
-  { id: 1, title: "The Alchemist", author: "Paulo Coelho", price: "$10", genre: "Fiction", cover: "https://via.placeholder.com/150x200.png?text=Alchemist+Cover" },
-  { id: 2, title: "Atomic Habits", author: "James Clear", price: "$15", genre: "Non-Fiction", cover: "https://via.placeholder.com/150x200.png?text=Atomic+Habits+Cover" },
-  { id: 3, title: "Sapiens", author: "Yuval Noah Harari", price: "$20", genre: "Non-Fiction", cover: "https://via.placeholder.com/150x200.png?text=Sapiens+Cover" },
-];
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import API from "../api";
 
 const Store = () => {
   const [books, setBooks] = useState([]);
-  const [genreFilter, setGenreFilter] = useState('');
-  const { isLoggedIn, logout } = useAuth();
+  const [genreFilter, setGenreFilter] = useState("");
+  const { isLoggedIn, user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/store/books")
-      .then(res => {
-        if (!res.ok) throw new Error("Backend not running, using mock data");
-        return res.json();
-      })
-      .then(data => setBooks(data))
-      .catch(() => setBooks(mockStoreBooks)); // fallback
+    API.get("/books")
+      .then((res) => setBooks(res.data))
+      .catch((err) => console.error("Failed fetching books:", err));
   }, []);
 
-  const filteredBooks = books.filter(book =>
-    !genreFilter || book.genre === genreFilter
+  // Only show books in the Store
+  const storeBooks = books.filter((book) => book.location === "Store");
+
+  const filteredBooks = storeBooks.filter(
+    (book) => !genreFilter || book.category === genreFilter
   );
 
   const handlePurchase = async (book) => {
@@ -37,13 +30,14 @@ const Store = () => {
     }
 
     try {
-      await fetch("http://localhost:5000/viewOrders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(book),
+      await API.post("/pendingRequests", {
+        user_id: user.id,
+        book_id: book.id,
+        action: "purchase",
       });
+      alert("Purchase request submitted! Waiting admin approval.");
     } catch (err) {
-      console.error("Purchase failed, mock fallback:", err);
+      console.error("Failed to submit request:", err);
     }
   };
 
@@ -54,19 +48,26 @@ const Store = () => {
         <div>
           <h2 className="font-bold mb-4">Filters</h2>
           <select
-            className="p-2 rounded border border-purple-300"
+            className="p-2 rounded border border-purple-300 w-full"
             value={genreFilter}
             onChange={(e) => setGenreFilter(e.target.value)}
           >
-            <option value="">All Genres</option>
+            <option value="">All Categories</option>
             <option value="Fiction">Fiction</option>
             <option value="Non-Fiction">Non-Fiction</option>
+            <option value="Self Help">Self Help</option>
+            <option value="Classic">Classic</option>
+            <option value="Fancy">Fancy</option>
+            <option value="High Fantasy">High Fantasy</option>
           </select>
         </div>
 
         {isLoggedIn && (
           <button
-            onClick={() => { logout(); navigate("/"); }}
+            onClick={() => {
+              logout();
+              navigate("/");
+            }}
             className="mt-4 w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600"
           >
             Logout
@@ -74,32 +75,57 @@ const Store = () => {
         )}
       </aside>
 
-      {/* Main content */}
+      {/* Books Grid */}
       <div className="flex-1 p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredBooks.length === 0 ? (
-            <p className="text-purple-900">No books found.</p>
-          ) : (
-            filteredBooks.map(book => (
+        <h1 className="text-2xl font-bold text-purple-900 mb-6">🛒 Store Books</h1>
+
+        {filteredBooks.length === 0 ? (
+          <p className="text-gray-600">No books found in the Store.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {filteredBooks.map((book) => (
               <div
                 key={book.id}
-                className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-                onClick={() => navigate(`/purchases/${book.id}`)} // ✅ Goes to /purchases/:id
+                className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition cursor-pointer overflow-hidden"
+                onClick={() => navigate(`/purchases/${book.id}`)}
               >
-                <img src={book.cover} alt={book.title} className="w-full h-48 object-cover rounded mb-2"/>
-                <h3 className="font-bold text-purple-900">{book.title}</h3>
-                <p className="text-gray-600">{book.author}</p>
-                <p className="text-purple-900 font-semibold">{book.price}</p>
-                <button
-                  className="mt-2 w-full bg-purple-500 text-white py-1 rounded hover:bg-purple-600"
-                  onClick={(e) => { e.stopPropagation(); handlePurchase(book); }}
-                >
-                  Purchase
-                </button>
+                <div className="w-full h-80 bg-gray-100 flex items-center justify-center">
+                  {book.cover ? (
+                    <img
+                      src={book.cover}
+                      alt={book.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-6xl">📘</span>
+                  )}
+                </div>
+
+                <div className="p-6 flex flex-col justify-between h-72">
+                  <div>
+                    <h3 className="font-bold text-purple-900 text-xl mb-2">
+                      {book.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-2">{book.author}</p>
+                    <p className="text-purple-900 font-semibold text-sm">
+                      {book.price ? `$${book.price}` : "Price N/A"}
+                    </p>
+                  </div>
+
+                  <button
+                    className="mt-4 w-full bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 transition"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePurchase(book);
+                    }}
+                  >
+                    Purchase
+                  </button>
+                </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

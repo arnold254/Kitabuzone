@@ -1,119 +1,104 @@
-import React, { useState } from 'react';
-
-const initialCart = [
-  {
-    id: 'FIG-120',
-    title: 'The 48 Laws of Power',
-    price: 700,
-    quantity: 1,
-    image: 'https://images-na.ssl-images-amazon.com/images/I/61J3Uu4jOLL.jpg',
-  },
-  {
-    id: 'FIG-121',
-    title: 'The Art of War',
-    price: 1500,
-    quantity: 1,
-    image: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1630683326i/10534.jpg',
-  },
-  {
-    id: 'FIG-122',
-    title: 'Atomic Habits',
-    price: 1000,
-    quantity: 1,
-    image: 'https://cdnattic.atticbooks.co.ke/img/V115044.jpg',
-  },
-];
+// src/pages/ShoppingCart.jsx
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
+import API from "../api";
 
 export default function ShoppingCart() {
-  const [cart, setCart] = useState(initialCart);
+  const { user } = useAuth();
+  const [cartOrders, setCartOrders] = useState([]);
+  const [refreshFlag, setRefreshFlag] = useState(false); // trigger refresh
 
-  const updateQuantity = (id, delta) => {
-    setCart(prev =>
-      prev.map(item =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item
-      )
-    );
+  const fetchCart = async () => {
+    if (!user) return;
+    try {
+      const res = await API.get("/shoppingCart");
+      const cartItems = res.data.cart
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      setCartOrders(cartItems);
+    } catch (err) {
+      console.error("Failed to fetch cart orders:", err);
+    }
   };
 
-  const removeItem = id => {
-    setCart(prev => prev.filter(item => item.id !== id));
-  };
+  useEffect(() => {
+    fetchCart();
+  }, [user, refreshFlag]); // refresh when user changes or refreshFlag toggles
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = 150;
-  const grandTotal = totalPrice + shipping;
+  // Optional: you can trigger refresh after approval from ActivityLogs
+  useEffect(() => {
+    const handleNewApproval = () => setRefreshFlag(prev => !prev);
+    // You could implement a global event emitter or context to notify this
+    window.addEventListener("new-approval", handleNewApproval);
+    return () => window.removeEventListener("new-approval", handleNewApproval);
+  }, []);
+
+  const totalAmount = cartOrders.reduce(
+    (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
+    0
+  );
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10 px-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-6 flex flex-col md:flex-row gap-6">
-        {/* Left: Cart Items */}
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold mb-4">Shopping Cart</h2>
-          <div className="max-h-[500px] overflow-y-auto pr-2">
-            {cart.map(item => (
-              <div key={item.id} className="flex items-center gap-4 p-4 border-b h-40">
-                <img src={item.image} alt={item.title} className="w-20 h-full object-cover rounded" />
-                <div className="flex-1">
-                  <h3 className="font-medium">{item.title}</h3>
-                  <p className="text-sm text-gray-600">KES. {item.price}</p>
-                  <div className="flex items-center mt-2 gap-2">
-                    <button
-                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                      onClick={() => updateQuantity(item.id, -1)}
-                    >
-                      −
-                    </button>
-                    <span className="px-3">{item.quantity}</span>
-                    <button
-                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                      onClick={() => updateQuantity(item.id, 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <button
-                  className="flex items-center justify-center gap-1 min-w-[150px] px-4 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                  onClick={() => removeItem(item.id)}
-                >
-                  🗙 Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Summary */}
-        <div className="w-full md:w-80 bg-gray-100 border rounded-md p-4 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Summary</h2>
-          <div className="flex justify-between mb-2">
-            <span>Items ({totalItems})</span>
-            <span>KES. {totalPrice}</span>
-          </div>
-          <div className="flex justify-between mb-2">
-            <span>Shipping</span>
-            <span>KES. {shipping}</span>
-          </div>
-          <div className="flex justify-between font-semibold border-t pt-2 mt-2">
-            <span>Total</span>
-            <span>KES. {grandTotal}</span>
-          </div>
-
-          <button
-            className={`mt-6 w-full py-2 rounded-md font-medium transition-colors duration-200 ${
-              cart.length
-                ? 'bg-black text-white hover:bg-gray-900'
-                : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-            }`}
-            disabled={!cart.length}
-            onClick={() => alert('Proceeding to checkout')}
+    <div className="flex flex-col items-center mt-10 px-4">
+      <div className="w-full max-w-5xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-purple-900">🛒 Shopping Cart</h1>
+          <Link
+            to="/viewOrders"
+            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
           >
-            Checkout
-          </button>
+            ⬅️ Back to Orders
+          </Link>
         </div>
+
+        {cartOrders.length === 0 ? (
+          <p className="text-purple-700">No approved orders yet.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {cartOrders.map(item => (
+                <div
+                  key={item.cart_item_id}
+                  className="bg-white border border-purple-200 rounded-xl p-4 shadow hover:shadow-md transition flex flex-col"
+                >
+                  <h2 className="font-semibold text-purple-800 mb-1">
+                    {item.title || "Unknown Book"}
+                  </h2>
+                  <p className="text-gray-600 text-sm mb-1">
+                    Price: ${item.price || 0}
+                  </p>
+                  <p className="text-gray-600 text-sm mb-1">
+                    Quantity: {item.quantity || 1}
+                  </p>
+                  <p className="text-gray-500 text-xs mb-2">
+                    Status: Approved
+                  </p>
+
+                  <Link
+                    to="/payment/card"
+                    state={{ total: totalAmount, orders: [item] }}
+                    className="mt-auto px-4 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm text-center"
+                  >
+                    💳 Checkout
+                  </Link>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex justify-between items-center border-t pt-4">
+              <p className="text-lg font-bold text-purple-900">
+                Total: ${totalAmount}
+              </p>
+              <Link
+                to="/payment/card"
+                state={{ total: totalAmount, orders: cartOrders }}
+                className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition font-medium"
+              >
+                💳 Proceed to Payment
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

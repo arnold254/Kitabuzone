@@ -1,81 +1,60 @@
-import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Card, CardContent } from "../../components/ui/Card";
-
-const salesData = [
-  { month: "Jan", sales: 15 },
-  { month: "Feb", sales: 25 },
-  { month: "Mar", sales: 40 },
-  { month: "Apr", sales: 20 },
-  { month: "May", sales: 55 },
-  { month: "Jun", sales: 35 },
-  { month: "Jul", sales: 45 },
-  { month: "Aug", sales: 50 },
-  { month: "Sep", sales: 30 },
-  { month: "Oct", sales: 60 },
-  { month: "Nov", sales: 40 },
-  { month: "Dec", sales: 75 },
-];
+// src/pages/admin/SalesReport.jsx
+import { useState, useEffect } from "react";
+import API from "../../api";
 
 const SalesReport = () => {
-  const [selectedMonth, setSelectedMonth] = useState("All");
+  const [sales, setSales] = useState([]);
+  const [filterBook, setFilterBook] = useState("");
 
-  const filteredData =
-    selectedMonth === "All"
-      ? salesData
-      : salesData.filter((item) => item.month === selectedMonth);
+  useEffect(() => {
+    API.get("/salesReports")
+      .then(res => setSales(res.data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const filteredSales = sales.filter(sale =>
+    sale.book.toLowerCase().includes(filterBook.toLowerCase())
+  );
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-purple-900">💰 Sales Report</h2>
-        <select
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          className="px-3 py-2 border rounded-lg text-purple-700 bg-purple-50 border-purple-200 focus:outline-none"
-        >
-          <option value="All">All Months</option>
-          {salesData.map((item) => (
-            <option key={item.month} value={item.month}>
-              {item.month}
-            </option>
-          ))}
-        </select>
+        <input
+          type="text"
+          placeholder="Filter by book..."
+          value={filterBook}
+          onChange={e => setFilterBook(e.target.value)}
+          className="px-3 py-2 border rounded-md text-sm w-64"
+        />
       </div>
 
-      {/* Line Chart */}
-      <Card>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="sales" stroke="#9333ea" strokeWidth={3} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Trend Analysis Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold">🔥 Peak Sales</h3>
-          <p className="text-gray-600">Highest sales were in December with 75 sales.</p>
-        </Card>
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold">📉 Lowest Sales</h3>
-          <p className="text-gray-600">April had the lowest sales, only 20.</p>
-        </Card>
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold">📊 Overall Trend</h3>
-          <p className="text-gray-600">Sales steadily grew throughout the year, peaking in December.</p>
-        </Card>
-      </div>
+      {filteredSales.length === 0 ? (
+        <p className="text-gray-500">No sales records found.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border rounded-lg shadow-sm">
+            <thead className="bg-purple-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">Book</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">Quantity</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">Price</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">Sold At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSales.map((sale) => (
+                <tr key={sale.id} className="border-t">
+                  <td className="px-4 py-2 text-sm text-gray-700">{sale.book}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{sale.quantity}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{sale.price}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{sale.soldAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

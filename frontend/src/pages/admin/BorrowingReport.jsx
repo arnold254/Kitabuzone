@@ -1,81 +1,60 @@
-import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Card, CardContent } from "../../components/ui/Card";
-
-const borrowingData = [
-  { month: "Jan", borrowings: 20 },
-  { month: "Feb", borrowings: 35 },
-  { month: "Mar", borrowings: 50 },
-  { month: "Apr", borrowings: 30 },
-  { month: "May", borrowings: 60 },
-  { month: "Jun", borrowings: 45 },
-  { month: "Jul", borrowings: 40 },
-  { month: "Aug", borrowings: 55 },
-  { month: "Sep", borrowings: 35 },
-  { month: "Oct", borrowings: 65 },
-  { month: "Nov", borrowings: 50 },
-  { month: "Dec", borrowings: 70 },
-];
+// src/pages/admin/BorrowingReport.jsx
+import { useState, useEffect } from "react";
+import API from "../../api";
 
 const BorrowingReport = () => {
-  const [selectedMonth, setSelectedMonth] = useState("All");
+  const [reports, setReports] = useState([]);
+  const [filterUser, setFilterUser] = useState("");
 
-  const filteredData =
-    selectedMonth === "All"
-      ? borrowingData
-      : borrowingData.filter((item) => item.month === selectedMonth);
+  useEffect(() => {
+    API.get("/borrowingReports")
+      .then(res => setReports(res.data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const filteredReports = reports.filter(report =>
+    report.user.toLowerCase().includes(filterUser.toLowerCase())
+  );
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-purple-900">📊 Borrowing Report</h2>
-        <select
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          className="px-3 py-2 border rounded-lg text-purple-700 bg-purple-50 border-purple-200 focus:outline-none"
-        >
-          <option value="All">All Months</option>
-          {borrowingData.map((item) => (
-            <option key={item.month} value={item.month}>
-              {item.month}
-            </option>
-          ))}
-        </select>
+        <h2 className="text-2xl font-bold text-purple-900">📚 Borrowing Report</h2>
+        <input
+          type="text"
+          placeholder="Filter by user..."
+          value={filterUser}
+          onChange={e => setFilterUser(e.target.value)}
+          className="px-3 py-2 border rounded-md text-sm w-64"
+        />
       </div>
 
-      {/* Line Chart */}
-      <Card>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="borrowings" stroke="#7e3af2" strokeWidth={3} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Trend Analysis Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold">📈 Peak Borrowing</h3>
-          <p className="text-gray-600">Most borrowings occurred in October with 65 borrowings.</p>
-        </Card>
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold">📉 Lowest Borrowing</h3>
-          <p className="text-gray-600">April recorded the lowest borrowings with only 30.</p>
-        </Card>
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold">📊 Overall Trend</h3>
-          <p className="text-gray-600">Borrowing activity shows steady growth towards the year end.</p>
-        </Card>
-      </div>
+      {filteredReports.length === 0 ? (
+        <p className="text-gray-500">No borrowing records found.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border rounded-lg shadow-sm">
+            <thead className="bg-purple-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">User</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">Book</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">Status</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-purple-900">Borrowed At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredReports.map((report) => (
+                <tr key={report.id} className="border-t">
+                  <td className="px-4 py-2 text-sm text-gray-700">{report.user}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{report.book}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{report.status}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{report.borrowedAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

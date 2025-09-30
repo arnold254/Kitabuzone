@@ -72,7 +72,7 @@ export default function ShoppingCart() {
                     {item.title || "Unknown Book"}
                   </h2>
                   <p className="text-gray-600 text-sm mb-1">
-                    Price: ${item.price || 0}
+                    Price: KES {item.price || 0}
                   </p>
                   <p className="text-gray-600 text-sm mb-1">
                     Quantity: {item.quantity || 1}
@@ -94,7 +94,7 @@ export default function ShoppingCart() {
 
             <div className="mt-8 flex justify-between items-center border-t pt-4">
               <p className="text-lg font-bold text-purple-900">
-                Total: ${totalAmount}
+                Total: KES {totalAmount}
               </p>
               <Link
                 to="/payment/card"

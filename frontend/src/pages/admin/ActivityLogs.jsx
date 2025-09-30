@@ -98,7 +98,7 @@ const ActivityLogs = () => {
                   Author: <span className="font-medium">{req.book?.author || "Unknown"}</span>
                 </p>
                 <p className="text-gray-600 text-sm">
-                  Price: <span className="font-medium">${req.book?.price || 0}</span>
+                  Price: <span className="font-medium">KES {req.book?.price || 0}</span>
                 </p>
                 <p className="text-gray-500 text-xs">📅 Requested: {formatDate(req.created_at)}</p>
                 <p className={`inline-block px-2 py-1 text-xs rounded font-medium ${

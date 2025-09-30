@@ -60,7 +60,7 @@ const BookDetails = () => {
         <div className="flex-1">
           <h2 className="text-2xl font-bold mb-4">{book.title}</h2>
           <p className="text-gray-700 mb-2">Author: {book.author}</p>
-          <p className="text-gray-700 mb-4">Price: {book.price ? `$${book.price}` : "N/A"}</p>
+          <p className="text-gray-700 mb-4">Price: {book.price ? `KES ${book.price}` : "N/A"}</p>
           <button
             onClick={handlePurchase}
             className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"

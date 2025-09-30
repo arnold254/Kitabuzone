@@ -77,7 +77,7 @@ const Store = () => {
 
       {/* Books Grid */}
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-bold text-purple-900 mb-6">🛒 Store Books</h1>
+        <h1 className="text-2xl font-bold text-purple-900 mb-6">🛒 Store </h1>
 
         {filteredBooks.length === 0 ? (
           <p className="text-gray-600">No books found in the Store.</p>
@@ -100,7 +100,7 @@ const Store = () => {
                 <div>
                   <h3 className="font-bold text-purple-900 mb-1">{book.title}</h3>
                   <p className="text-gray-600 text-sm mb-1">{book.author}</p>
-                  <p className="text-purple-900 font-semibold text-sm">{book.price ? `$${book.price}` : "Price N/A"}</p>
+                  <p className="text-purple-900 font-semibold text-sm">{book.price ? `KES ${book.price}` : "Price N/A"}</p>
                 </div>
 
                 {/* Purchase Button */}

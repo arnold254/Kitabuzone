@@ -72,4 +72,7 @@ def create_app(config_class=DevelopmentConfig):
     from .routes import shopping_cart
     app.register_blueprint(shopping_cart.bp, url_prefix="/shoppingCart")
 
+    from .routes.borrowing_cart import bp as borrowing_cart_bp
+    app.register_blueprint(borrowing_cart_bp, url_prefix="/borrowingCart")
+
     return app

@@ -94,7 +94,7 @@ export default function ViewOrders() {
                     </span>
                   </p>
                   <p className="text-gray-600 text-sm mb-1">
-                    Total: ${order.book ? order.book.price : 0}
+                    Total: KES {order.book ? order.book.price : 0}
                   </p>
                   <p className="text-gray-500 text-xs">
                     Created: {order.created_at ? new Date(order.created_at).toLocaleDateString() : "Unknown"}

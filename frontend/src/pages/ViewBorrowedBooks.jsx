@@ -2,6 +2,7 @@
 import { useBorrowedBooks } from "../context/BorrowedBooksContext";
 import { format } from "date-fns";
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import API from "../api";
 
 const ViewBorrowedBooks = () => {
@@ -34,7 +35,24 @@ const ViewBorrowedBooks = () => {
 
   return (
     <div className="p-6 space-y-6 min-h-screen bg-milky-white">
-      <h1 className="text-2xl font-bold text-purple-900 mb-4">📚 Borrowed Books</h1>
+      {/* Header with Nav Links */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-purple-900">📚 Borrowed Books</h1>
+          <Link
+            to="/library"
+            className="text-purple-700 hover:underline text-sm"
+          >
+            ← Back to Library
+          </Link>
+        </div>
+        <Link
+          to="/borrowingCart"
+          className="text-purple-700 hover:underline font-medium"
+        >
+          Go to Borrowing Cart →
+        </Link>
+      </div>
 
       {requests.length === 0 ? (
         <p className="text-gray-500">No borrowed books yet.</p>
@@ -47,7 +65,9 @@ const ViewBorrowedBooks = () => {
                 <p className="text-gray-600 text-sm mb-1">Author: {req.book?.author || "Unknown"}</p>
                 <p className="text-gray-600 text-sm mb-1">Genre: {req.book?.genre || "Unknown"}</p>
                 <p className="text-gray-600 text-sm mb-1">Price: ${req.book?.price || 0}</p>
-                <p className="text-gray-500 text-xs mb-1">Requested: {req.created_at ? format(new Date(req.created_at), "PPP p") : "-"}</p>
+                <p className="text-gray-500 text-xs mb-1">
+                  Requested: {req.created_at ? format(new Date(req.created_at), "PPP p") : "-"}
+                </p>
                 <span className={`inline-block px-2 py-1 text-xs rounded font-medium ${
                   req.status === "pending" ? "bg-yellow-100 text-yellow-800" :
                   req.status === "approved" ? "bg-green-100 text-green-700" :

@@ -89,38 +89,56 @@ def update_request(request_id):
     print(f"Pending request {pending.id} updated to {new_status}")
 
     # ---------------------------
-    # If approved, add to PurchaseCart
+    # If approved, add to correct cart
     # ---------------------------
     if new_status.lower() in ["approve", "approved"]:
-        from ..models import PurchaseCart, PurchaseCartItem
+        if pending.action.lower() in ["purchase", "buy"]:
+            from ..models import PurchaseCart, PurchaseCartItem
 
-        print("Adding book to cart for user:", pending.user_id)
-        print("Book ID:", pending.book_id)
+            print("Adding book to shopping cart for user:", pending.user_id)
 
-        # Find or create the user's cart
-        cart = PurchaseCart.query.filter_by(user_id=pending.user_id).first()
-        if not cart:
-            cart = PurchaseCart(user_id=pending.user_id)
-            db.session.add(cart)
-            db.session.commit()
-            print("Created new cart for user:", cart.id)
+            cart = PurchaseCart.query.filter_by(user_id=pending.user_id).first()
+            if not cart:
+                cart = PurchaseCart(user_id=pending.user_id)
+                db.session.add(cart)
+                db.session.commit()
+                print("Created new shopping cart for user:", cart.id)
 
-        # Add the approved book as an item (avoid duplicates)
-        existing_item = PurchaseCartItem.query.filter_by(
-            cart_id=cart.id, book_id=pending.book_id
-        ).first()
-        if existing_item:
-            existing_item.quantity += 1
-            print(f"Increased quantity for book {pending.book_id} in cart {cart.id}")
-        else:
-            item = PurchaseCartItem(cart_id=cart.id, book_id=pending.book_id, quantity=1)
-            db.session.add(item)
-            print(f"Added book {pending.book_id} to cart {cart.id}")
+            existing_item = PurchaseCartItem.query.filter_by(
+                cart_id=cart.id, book_id=pending.book_id
+            ).first()
+            if existing_item:
+                existing_item.quantity += 1
+                print(f"Increased quantity for book {pending.book_id} in cart {cart.id}")
+            else:
+                item = PurchaseCartItem(cart_id=cart.id, book_id=pending.book_id, quantity=1)
+                db.session.add(item)
+                print(f"Added book {pending.book_id} to shopping cart {cart.id}")
 
-        db.session.commit()  # commit items
+        elif pending.action.lower() in ["borrow", "lend"]:
+            from ..models import LendingCart, LendingCartItem
 
-        print("Cart found:", cart.id)
-        print("Cart items count:", len(list(cart.items)) if cart else 0)
+            print("Adding book to lending cart for user:", pending.user_id)
+
+            cart = LendingCart.query.filter_by(user_id=pending.user_id).first()
+            if not cart:
+                cart = LendingCart(user_id=pending.user_id)
+                db.session.add(cart)
+                db.session.commit()
+                print("Created new lending cart for user:", cart.id)
+
+            existing_item = LendingCartItem.query.filter_by(
+                cart_id=cart.id, book_id=pending.book_id
+            ).first()
+            if existing_item:
+                existing_item.quantity += 1
+                print(f"Increased quantity for book {pending.book_id} in lending cart {cart.id}")
+            else:
+                item = LendingCartItem(cart_id=cart.id, book_id=pending.book_id, quantity=1)
+                db.session.add(item)
+                print(f"Added book {pending.book_id} to lending cart {cart.id}")
+
+        db.session.commit()
 
     # ---------------------------
     # Log the action

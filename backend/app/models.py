@@ -135,13 +135,19 @@ class PendingRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey("books.id"), nullable=False)
-    action = db.Column(db.String(50), default="purchase")
+    action = db.Column(db.String(50), default="purchase")  # "purchase" or "lend"
     status = db.Column(db.String(50), default="pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow) 
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     user = db.relationship("User", back_populates="pending_requests")
     book = db.relationship("Book", back_populates="pending_requests")
+
+    def is_purchase(self):
+        return self.action.lower() == "purchase"
+
+    def is_lend(self):
+        return self.action.lower() == "lend"
 
 # -------------------- ORDERS --------------------
 class PurchaseCart(db.Model):

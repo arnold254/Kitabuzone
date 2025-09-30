@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import logo from "../../assets/logo.jpg";
 
 const Header = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -13,7 +14,13 @@ const Header = () => {
     <header className="w-full bg-purple-50 text-purple-900 p-4 shadow-md sticky top-0 z-50">
       <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <h1 className="font-bold text-2xl">KitabuZone</h1>
+        <div className="flex items-center h-12">
+          <img
+            src={logo}
+            alt="Kitabu Zone Logo"
+            className="max-h-16 w-auto object-contain"
+          />
+        </div>
 
         {/* Centered Search */}
         <div className="flex-1 mx-6 relative max-w-lg">

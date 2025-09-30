@@ -106,7 +106,14 @@ class Book(db.Model):
     lendings = db.relationship("Lending", back_populates="book", lazy="dynamic")
     lending_requests = db.relationship("LendingRequest", back_populates="book", lazy="dynamic")
     return_requests = db.relationship("ReturnRequest", back_populates="book", lazy="dynamic")
-    pending_requests = db.relationship("PendingRequest", back_populates="book", lazy="dynamic")
+    
+    # ✅ Cascade delete for pending requests
+    pending_requests = db.relationship(
+        "PendingRequest",
+        back_populates="book",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
 
     def to_dict(self):
         return {
@@ -124,8 +131,9 @@ class Book(db.Model):
             "is_available_for_lending": self.is_available_for_lending,
             "uploaded_by": self.uploaded_by,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "cover": self.cover or f"https://via.placeholder.com/150?text={self.title.replace(' ', '+')}"  # ✅ fallback
-            }
+            "cover": self.cover or f"https://via.placeholder.com/150?text={self.title.replace(' ', '+')}"
+        }
+
 
 # -------------------- PENDING REQUESTS --------------------
 class PendingRequest(db.Model):
@@ -133,21 +141,34 @@ class PendingRequest(db.Model):
     __table_args__ = {"extend_existing": True}
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(50), db.ForeignKey("users.id"), nullable=False)
-    book_id = db.Column(db.Integer, db.ForeignKey("books.id"), nullable=False)
-    action = db.Column(db.String(50), default="purchase")  # "purchase" or "lend"
+
+    user_id = db.Column(
+        db.String(50),
+        db.ForeignKey(
+            "users.id",
+            name="fk_pending_requests_user_id",   # ✅ explicit name
+            ondelete="CASCADE"
+        ),
+        nullable=False
+    )
+
+    book_id = db.Column(
+        db.String(50),
+        db.ForeignKey(
+            "books.id",
+            name="fk_pending_requests_book_id",   # ✅ explicit name
+            ondelete="CASCADE"
+        ),
+        nullable=False
+    )
+
+    action = db.Column(db.String(50), default="purchase")
     status = db.Column(db.String(50), default="pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     user = db.relationship("User", back_populates="pending_requests")
     book = db.relationship("Book", back_populates="pending_requests")
-
-    def is_purchase(self):
-        return self.action.lower() == "purchase"
-
-    def is_lend(self):
-        return self.action.lower() == "lend"
 
 # -------------------- ORDERS --------------------
 class PurchaseCart(db.Model):

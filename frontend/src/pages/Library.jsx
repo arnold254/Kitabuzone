@@ -1,4 +1,3 @@
-// src/pages/Library.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -10,7 +9,6 @@ const Library = () => {
   const [books, setBooks] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [genreFilter, setGenreFilter] = useState("");
-  const [languageFilter, setLanguageFilter] = useState("");
   const { isLoggedIn, user } = useAuth();
   const { requests, setRequests } = useBorrowedBooks();
   const navigate = useNavigate();
@@ -24,10 +22,14 @@ const Library = () => {
       });
   }, []);
 
+  // ✅ Extract unique genres from books
+  const genreOptions = Array.from(
+    new Set(books.map((book) => book.genre).filter(Boolean))
+  );
+
   const filteredBooks = books.filter(book =>
     (!searchTerm || book.title.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!genreFilter || book.genre === genreFilter) &&
-    (!languageFilter || book.language === languageFilter)
+    (!genreFilter || book.genre === genreFilter)
   );
 
   const handleBorrow = async (book) => {
@@ -51,7 +53,6 @@ const Library = () => {
 
       alert("Borrow request submitted! Waiting for admin approval.");
 
-      // Update reactive borrowed requests
       setRequests(prev => [
         {
           id: res.data.id,
@@ -75,24 +76,18 @@ const Library = () => {
       <aside className="w-48 bg-purple-50 p-4 text-purple-900">
         <h2 className="font-bold mb-4">Filters</h2>
         <div className="flex flex-col gap-3">
+          {/* ✅ Dynamic Genre Filter */}
           <select
             className="p-2 rounded border border-purple-300"
             value={genreFilter}
             onChange={(e) => setGenreFilter(e.target.value)}
           >
-            <option value="">All Genres</option>
-            <option value="Programming">Programming</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="Fiction">Fiction</option>
-          </select>
-          <select
-            className="p-2 rounded border border-purple-300"
-            value={languageFilter}
-            onChange={(e) => setLanguageFilter(e.target.value)}
-          >
-            <option value="">All Languages</option>
-            <option value="English">English</option>
-            <option value="Spanish">Spanish</option>
+            <option value="">All Categories</option>
+            {genreOptions.map((genre) => (
+              <option key={genre} value={genre}>
+                {genre}
+              </option>
+            ))}
           </select>
         </div>
       </aside>
@@ -137,9 +132,13 @@ const Library = () => {
                 onClick={() => navigate(`/bookDetails/${book.id}`)}
               >
                 <img
-                 src={book.cover ? `http://127.0.0.1:5000${book.cover}` : `https://via.placeholder.com/150?text=${book.title.replace(' ', '+')}`}
-                 alt={book.title}
-                 className="w-full h-48 object-cover rounded mb-2"
+                  src={
+                    book.cover?.startsWith("http")
+                      ? book.cover
+                      : `https://via.placeholder.com/150?text=${book.title.replace(" ", "+")}`
+                  }
+                  alt={book.title}
+                  className="w-full h-48 object-cover rounded mb-2"
                 />
 
                 <h3 className="font-bold text-purple-900">{book.title}</h3>

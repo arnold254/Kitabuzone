@@ -57,6 +57,8 @@ def create_book():
     if location == "Store" and not data.get("price"):
         return jsonify({"msg": "Price is required when adding a book to the Store"}), 400
 
+    cover = data.get("cover")  # New line
+
     book = Book(
         title=title,
         author=data.get("author"),
@@ -69,6 +71,7 @@ def create_book():
         is_available_for_sale=(location == "Store"),
         is_available_for_lending=(location == "Library"),
         uploaded_by=get_jwt_identity(),
+        cover=cover
     )
     db.session.add(book)
     db.session.commit()

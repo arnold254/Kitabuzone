@@ -8,15 +8,22 @@ export default function ViewOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
 
-  // Fetch orders
+  // Fetch orders from new backend endpoint
   const fetchOrders = async () => {
     if (!user) return;
 
     try {
-      const res = await API.get("/pendingRequests");
-      const sortedOrders = res.data.sort(
+      // ✅ Hit the new endpoint
+      const res = await API.get("/orders/vieworders");
+
+      // ✅ Filter to this user’s orders (backend already restricts by user, but safe to double-check)
+      const userOrders = res.data.filter(order => order.user_id === user.id);
+
+      // ✅ Sort by created_at desc
+      const sortedOrders = userOrders.sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
+
       setOrders(sortedOrders);
     } catch (err) {
       console.error("Failed to fetch orders:", err);
@@ -81,27 +88,36 @@ export default function ViewOrders() {
               >
                 <div>
                   <h2 className="font-semibold text-purple-800 mb-1">
-                    {order.book ? order.book.title : "Unknown Book"}
+                    {/* If multiple items, show first item’s title or a count */}
+                    {order.items && order.items.length > 0
+                      ? `${order.items[0].title} ${order.items.length > 1 ? `+${order.items.length - 1} more` : ""}`
+                      : "Unknown Book"}
                   </h2>
                   <p className="text-purple-700 text-sm mb-1">Order #: {order.id}</p>
                   <p className="text-gray-600 text-sm mb-1">
                     Status:
                     <span
                       className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${
-                        order.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                        order.status === "approved" ? "bg-green-100 text-green-700" :
-                        order.status === "purchased" ? "bg-blue-100 text-blue-700" :
-                        "bg-gray-100 text-gray-700"
+                        order.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : order.status === "approved"
+                          ? "bg-green-100 text-green-700"
+                          : order.status === "purchased"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {order.status === "purchased" ? "Purchased" : order.status}
                     </span>
                   </p>
                   <p className="text-gray-600 text-sm mb-1">
-                    Total: KES {order.book ? order.book.price : 0}
+                    Total: KES {order.total_amount}
                   </p>
                   <p className="text-gray-500 text-xs">
-                    Created: {order.created_at ? new Date(order.created_at).toLocaleDateString() : "Unknown"}
+                    Created:{" "}
+                    {order.created_at
+                      ? new Date(order.created_at).toLocaleDateString()
+                      : "Unknown"}
                   </p>
                 </div>
               </div>

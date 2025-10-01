@@ -204,7 +204,8 @@ class PurchaseCartItem(db.Model):
     book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
     checked_out = db.Column(db.Boolean, default=False)
-
+    source = db.Column(db.String(20), default="store")
+    
 class LendingCart(db.Model):
     __tablename__ = "lending_carts"
     id = db.Column(db.String(50), primary_key=True, default=gen_id)

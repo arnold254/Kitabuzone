@@ -6,6 +6,7 @@ import API from "../api";
 const Store = () => {
   const [books, setBooks] = useState([]);
   const [genreFilter, setGenreFilter] = useState("");
+  const [priceFilter, setPriceFilter] = useState("");
   const { isLoggedIn, user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -15,12 +16,25 @@ const Store = () => {
       .catch((err) => console.error("Failed fetching books:", err));
   }, []);
 
-  // Only show books in the Store
   const storeBooks = books.filter((book) => book.location === "Store");
 
-  const filteredBooks = storeBooks.filter(
-    (book) => !genreFilter || book.category === genreFilter
+  // ✅ Extract unique genres from storeBooks
+  const genreOptions = Array.from(
+    new Set(storeBooks.map((book) => book.category).filter(Boolean))
   );
+
+  // ✅ Combined filter logic
+  const filteredBooks = storeBooks.filter((book) => {
+    const matchesGenre = !genreFilter || book.category === genreFilter;
+
+    const matchesPrice =
+      !priceFilter ||
+      (priceFilter === "low" && book.price <= 500) ||
+      (priceFilter === "mid" && book.price > 500 && book.price <= 1000) ||
+      (priceFilter === "high" && book.price > 1000);
+
+    return matchesGenre && matchesPrice;
+  });
 
   const handlePurchase = async (book) => {
     if (!isLoggedIn) {
@@ -47,18 +61,31 @@ const Store = () => {
       <aside className="w-48 bg-purple-50 p-4 text-purple-900 flex flex-col justify-between">
         <div>
           <h2 className="font-bold mb-4">Filters</h2>
+
+          {/* ✅ Dynamic Genre Filter */}
           <select
-            className="p-2 rounded border border-purple-300 w-full"
+            className="p-2 rounded border border-purple-300 w-full mb-4"
             value={genreFilter}
             onChange={(e) => setGenreFilter(e.target.value)}
           >
             <option value="">All Categories</option>
-            <option value="Fiction">Fiction</option>
-            <option value="Non-Fiction">Non-Fiction</option>
-            <option value="Self Help">Self Help</option>
-            <option value="Classic">Classic</option>
-            <option value="Fancy">Fancy</option>
-            <option value="High Fantasy">High Fantasy</option>
+            {genreOptions.map((genre) => (
+              <option key={genre} value={genre}>
+                {genre}
+              </option>
+            ))}
+          </select>
+
+          {/* ✅ Price Filter */}
+          <select
+            className="p-2 rounded border border-purple-300 w-full"
+            value={priceFilter}
+            onChange={(e) => setPriceFilter(e.target.value)}
+          >
+            <option value="">All Prices</option>
+            <option value="low">Below KES 500</option>
+            <option value="mid">KES 500–1000</option>
+            <option value="high">Above KES 1000</option>
           </select>
         </div>
 
@@ -77,7 +104,7 @@ const Store = () => {
 
       {/* Books Grid */}
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-bold text-purple-900 mb-6">🛒 Store </h1>
+        <h1 className="text-2xl font-bold text-purple-900 mb-6">🛒 Store</h1>
 
         {filteredBooks.length === 0 ? (
           <p className="text-gray-600">No books found in the Store.</p>
@@ -89,18 +116,29 @@ const Store = () => {
                 className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
                 onClick={() => navigate(`/purchases/${book.id}`)}
               >
-                {/* Book Cover */}
+                {/* ✅ Book Cover from DB */}
                 <img
-                  src={book.cover ? `http://127.0.0.1:5000${book.cover}` : `https://via.placeholder.com/150?text=${book.title.replace(' ', '+')}`}
+                  src={
+                    book.cover?.startsWith("http")
+                      ? book.cover
+                      : `https://via.placeholder.com/150?text=${book.title.replace(
+                          " ",
+                          "+"
+                        )}`
+                  }
                   alt={book.title}
                   className="w-full h-48 object-cover rounded mb-2"
                 />
 
                 {/* Title and Author */}
                 <div>
-                  <h3 className="font-bold text-purple-900 mb-1">{book.title}</h3>
+                  <h3 className="font-bold text-purple-900 mb-1">
+                    {book.title}
+                  </h3>
                   <p className="text-gray-600 text-sm mb-1">{book.author}</p>
-                  <p className="text-purple-900 font-semibold text-sm">{book.price ? `KES ${book.price}` : "Price N/A"}</p>
+                  <p className="text-purple-900 font-semibold text-sm">
+                    {book.price ? `KES ${book.price}` : "Price N/A"}
+                  </p>
                 </div>
 
                 {/* Purchase Button */}

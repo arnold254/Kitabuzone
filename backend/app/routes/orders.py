@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from ..extensions import db
-from ..models import Order, OrderItem, PurchaseCart, PurchaseCartItem, User
+from ..models import Order, OrderItem, PurchaseCart, PurchaseCartItem, User, PendingRequest
 
 bp = Blueprint("orders", __name__)
 
@@ -46,20 +46,58 @@ def checkout_order():
 
 
 # ---------------------------
-# User views their orders
+# User views their orders (detailed)
 # ---------------------------
-@bp.route("/my", methods=["GET"])
+@bp.route("/vieworders", methods=["GET"])
 @jwt_required()
-def my_orders():
+def view_orders():
     user_id = get_jwt_identity()
+
+    # 1. Fetch actual orders
     orders = Order.query.filter_by(user_id=user_id).all()
-    return jsonify([{
-        "id": o.id,
-        "status": o.status,
-        "total_amount": str(o.total_amount),
-        "created_at": o.created_at.isoformat(),
-        "items": [{"book_id": i.book_id, "title": i.book.title, "quantity": i.quantity} for i in o.items]
-    } for o in orders])
+    response = []
+    for o in orders:
+        response.append({
+            "id": o.id,
+            "status": o.status,
+            "total_amount": str(o.total_amount),
+            "created_at": o.created_at.isoformat() if o.created_at else None,
+            "items": [
+                {
+                    "book_id": i.book_id,
+                    "title": i.book.title if i.book else None,
+                    "quantity": i.quantity,
+                    "price": str(i.book.price) if i.book else None
+                }
+                for i in o.items
+            ]
+        })
+
+    # 2. Fetch pending purchase requests
+    pending_reqs = PendingRequest.query.filter_by(user_id=user_id, action="purchase").all()
+    for p in pending_reqs:
+        response.append({
+            "id": f"pending-{p.id}",   # avoid clashing with real order IDs
+            "status": "pending",
+            "total_amount": str(p.book.price) if p.book and p.book.price else "0",
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "items": [
+                {
+                    "book_id": p.book.id if p.book else None,
+                    "title": p.book.title if p.book else "Unknown",
+                    "quantity": 1,
+                    "price": str(p.book.price) if p.book else None
+                }
+            ]
+        })
+
+    # 3. Sort all combined by created_at desc
+    response.sort(
+        key=lambda x: x["created_at"] or "",
+        reverse=True
+    )
+
+    return jsonify(response), 200
 
 
 # ---------------------------

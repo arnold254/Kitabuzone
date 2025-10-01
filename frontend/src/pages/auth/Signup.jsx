@@ -6,13 +6,18 @@ import { useNavigate, Link } from "react-router-dom";
 const Signup = () => {
   const { signup } = useAuth();
   const navigate = useNavigate();
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    signup({ email, password });
-    navigate("/"); // redirect home
+
+    const userData = await signup({ name, email, password });
+    if (userData) {
+      navigate("/"); // redirect home on successful signup
+    }
   };
 
   return (
@@ -28,6 +33,14 @@ const Signup = () => {
 
         <h2 className="text-2xl font-bold text-purple-700 mb-4 text-center">Signup</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            required
+          />
           <input
             type="email"
             placeholder="Email"

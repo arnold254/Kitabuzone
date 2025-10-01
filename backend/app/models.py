@@ -44,30 +44,49 @@ class User(db.Model):
 
     # -------------------- Reset token methods --------------------
     def generate_reset_token(self):
-        self.reset_token = create_access_token(
+        """
+        Generate a JWT reset token for the user and store it with expiration.
+        """
+        token = create_access_token(
             identity=self.id,
             additional_claims={"reset": True},
             expires_delta=current_app.config["RESET_TOKEN_EXPIRES"]
         )
-        self.reset_token_expiration = int(datetime.utcnow().timestamp()) + current_app.config["RESET_TOKEN_EXPIRES"].total_seconds()
-        return self.reset_token
+        self.reset_token = token
+        self.reset_token_expiration = int(datetime.utcnow().timestamp()) + \
+            current_app.config["RESET_TOKEN_EXPIRES"].total_seconds()
+        db.session.commit()
+        print("Generated reset token:", token)  # <-- debug
+        return token
 
     @staticmethod
     def verify_reset_token(token):
-        user = User.query.filter_by(reset_token=token).first()
-        if user and user.reset_token_expiration > int(datetime.utcnow().timestamp()):
-            return user
+        """
+        Verify JWT reset token and return the corresponding User.
+        Returns None if token is invalid or expired.
+        """
         try:
             data = decode_token(token)
-            if data.get("claims", {}).get("reset"):
-                return User.query.get(data["sub"])
-        except Exception:
+            print("Decoded token:", data)  # <-- debug
+            user_id = data.get("sub")
+            if not data.get("reset") or not user_id:
+                print("Token missing reset claim or user id")  # <-- debug
+                return None
+            user = User.query.get(user_id)
+            if not user:
+                print("User not found for token")  # <-- debug
+                return None
+            if user.reset_token != token:
+                print("Token does not match user's stored reset token")  # <-- debug
+                return None
+            if user.reset_token_expiration < int(datetime.utcnow().timestamp()):
+                print("Token expired")  # <-- debug
+                return None
+            print("Token verification successful for user:", user.email)  # <-- debug
+            return user
+        except Exception as e:
+            print("Token verification error:", e)
             return None
-        return None
-
-    def clear_reset_token(self):
-        self.reset_token = None
-        self.reset_token_expiration = None
 
     # -------------------- Serialization --------------------
     def to_dict(self):
@@ -184,6 +203,7 @@ class PurchaseCartItem(db.Model):
     cart_id = db.Column(db.String(50), db.ForeignKey("purchase_carts.id"), nullable=False)
     book_id = db.Column(db.String(50), db.ForeignKey("books.id"), nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
+    checked_out = db.Column(db.Boolean, default=False)
 
 class LendingCart(db.Model):
     __tablename__ = "lending_carts"

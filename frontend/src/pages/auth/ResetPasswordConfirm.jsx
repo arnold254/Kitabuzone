@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 const ResetPasswordConfirm = () => {
-  const { token } = useParams();
+  const { token } = useParams(); // get token from URL
   const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,18 +20,18 @@ const ResetPasswordConfirm = () => {
       return;
     }
 
-    // Basic password strength validation
     if (newPassword.length < 8) {
       setError("Password must be at least 8 characters long");
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/auth/reset-password", {
+      const res = await fetch(`http://localhost:5000/auth/reset-password/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, new_password: newPassword }),
+        body: JSON.stringify({ new_password: newPassword }), // only new_password in body
       });
+
       const data = await res.json();
 
       if (res.ok) {

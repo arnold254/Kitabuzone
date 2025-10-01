@@ -5,6 +5,9 @@ import Store from "./pages/Store";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import ResetPassword from "./pages/auth/ResetPassword";
+import ResetPasswordConfirm from "./pages/auth/ResetPasswordConfirm";
+
+// Librbry & Store Pages
 import Library from "./pages/Library";
 import BorrowingCart from "./pages/BorrowingCart";
 import ViewBorrowedBooks from "./pages/ViewBorrowedBooks";
@@ -45,6 +48,7 @@ function AppWrapper() {
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/signup" element={<Signup />} />
         <Route path="/auth/reset" element={<ResetPassword />} />
+        <Route path="/auth/reset/:token" element={<ResetPasswordConfirm />} />
 
         {/* Library and Borrowing */}
         <Route path="/library" element={<Library />} />

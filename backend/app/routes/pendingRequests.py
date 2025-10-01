@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..extensions import db
-from ..models import PendingRequest, User
+from ..models import PendingRequest, User, ActivityLog, PurchaseCart, PurchaseCartItem
 
 bp = Blueprint("pendingRequests", __name__)
 
@@ -14,7 +14,7 @@ def create_request():
     user_id = get_jwt_identity()
     data = request.get_json()
     book_id = data.get("book_id")
-    action = data.get("action", "borrow")  # default to borrow for library
+    action = data.get("action", "borrow")
 
     if not book_id:
         return jsonify({"error": "book_id is required"}), 400
@@ -31,8 +31,9 @@ def create_request():
     print(f"Pending request created: {pending.id} for user {user_id}")
     return jsonify({"message": "Request submitted", "id": pending.id}), 201
 
+
 # ---------------------------
-# List pending requests with book info
+# List pending requests
 # ---------------------------
 @bp.route("", methods=["GET"])
 @jwt_required()
@@ -43,15 +44,13 @@ def list_requests():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    if user.role == "admin":
-        requests = PendingRequest.query.all()
-    else:
-        requests = PendingRequest.query.filter_by(user_id=user_id).all()
+    requests = PendingRequest.query.all() if user.role == "admin" else PendingRequest.query.filter_by(user_id=user_id).all()
 
     results = []
     for r in requests:
         results.append({
             "id": r.id,
+            "user_id": r.user_id,
             "user": r.user.name if r.user else r.user_id,
             "book_id": r.book_id,
             "book": {
@@ -68,89 +67,142 @@ def list_requests():
 
     return jsonify(results), 200
 
+
 # ---------------------------
-# Update pending request status
+# Update single request status (Admin or User actions)
 # ---------------------------
 @bp.route("/<request_id>", methods=["PATCH"])
 @jwt_required()
 def update_request(request_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-
-    if not user or user.role != "admin":
-        return jsonify({"error": "Admins only"}), 403
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
     data = request.get_json()
     new_status = data.get("status")
-
     pending = PendingRequest.query.get_or_404(request_id)
-    pending.status = new_status
-    db.session.commit()
-    print(f"Pending request {pending.id} updated to {new_status}")
 
-    # ---------------------------
-    # If approved, add to correct cart
-    # ---------------------------
-    if new_status.lower() in ["approve", "approved"]:
-        if pending.action.lower() in ["purchase", "buy"]:
-            from ..models import PurchaseCart, PurchaseCartItem
+    # ---------- ADMIN ACTIONS ----------
+    if user.role == "admin":
+        if new_status.lower() in ["approve", "approved"]:
+            pending.status = "approved"
+            log_action = "Approved"
 
-            print("Adding book to shopping cart for user:", pending.user_id)
-
+            # --- Automatically add to user's cart ---
             cart = PurchaseCart.query.filter_by(user_id=pending.user_id).first()
             if not cart:
                 cart = PurchaseCart(user_id=pending.user_id)
                 db.session.add(cart)
                 db.session.commit()
-                print("Created new shopping cart for user:", cart.id)
 
             existing_item = PurchaseCartItem.query.filter_by(
-                cart_id=cart.id, book_id=pending.book_id
+                cart_id=cart.id,
+                book_id=pending.book_id,
+                checked_out=False
             ).first()
-            if existing_item:
-                existing_item.quantity += 1
-                print(f"Increased quantity for book {pending.book_id} in cart {cart.id}")
-            else:
-                item = PurchaseCartItem(cart_id=cart.id, book_id=pending.book_id, quantity=1)
+
+            if not existing_item:
+                item = PurchaseCartItem(cart_id=cart.id, book_id=pending.book_id, quantity=1, checked_out=False)
                 db.session.add(item)
-                print(f"Added book {pending.book_id} to shopping cart {cart.id}")
 
-        elif pending.action.lower() in ["borrow", "lend"]:
-            from ..models import LendingCart, LendingCartItem
+        elif new_status.lower() in ["decline", "declined"]:
+            pending.status = "declined"
+            log_action = "Declined"
 
-            print("Adding book to lending cart for user:", pending.user_id)
+        elif new_status.lower() == "return_approved" and pending.status == "return_pending":
+            pending.status = "returned"
+            log_action = "Return Approved"
+            if pending.book:
+                pending.book.copies_available += 1
+        else:
+            return jsonify({"error": "Invalid status"}), 400
 
-            cart = LendingCart.query.filter_by(user_id=pending.user_id).first()
-            if not cart:
-                cart = LendingCart(user_id=pending.user_id)
-                db.session.add(cart)
-                db.session.commit()
-                print("Created new lending cart for user:", cart.id)
-
-            existing_item = LendingCartItem.query.filter_by(
-                cart_id=cart.id, book_id=pending.book_id
-            ).first()
-            if existing_item:
-                existing_item.quantity += 1
-                print(f"Increased quantity for book {pending.book_id} in lending cart {cart.id}")
-            else:
-                item = LendingCartItem(cart_id=cart.id, book_id=pending.book_id, quantity=1)
-                db.session.add(item)
-                print(f"Added book {pending.book_id} to lending cart {cart.id}")
-
+        log = ActivityLog(
+            user_id=user.id,
+            action=log_action,
+            item=f"Request {pending.id} for book '{pending.book.title if pending.book else pending.book_id}'"
+        )
+        db.session.add(log)
         db.session.commit()
+        return jsonify({"message": f"Request {pending.status} processed and logged", "status": pending.status}), 200
 
-    # ---------------------------
-    # Log the action
-    # ---------------------------
-    from ..models import ActivityLog
+    # ---------- USER ACTIONS ----------
+    else:
+     if pending.user_id != user.id:
+        return jsonify({"error": "Action not allowed: You do not own this request"}), 403
+
+    # Confirm borrow
+    if new_status.lower() == "confirm_borrow" and pending.status == "approved":
+        pending.status = "borrowed"
+        log_action = "Borrowed"
+
+    # Request return
+    elif new_status.lower() == "return_pending" and pending.status == "borrowed":
+        pending.status = "return_pending"
+        log_action = "Return Requested"
+
+    # Mark as purchased
+    elif new_status.lower() == "purchased" and pending.status == "approved":
+        pending.status = "purchased"
+        log_action = "Purchased"
+
+        # --- Mark all cart items for this book as checked out ---
+        cart = PurchaseCart.query.filter_by(user_id=user.id).first()
+        if cart:
+            cart_items = PurchaseCartItem.query.filter_by(
+                cart_id=cart.id,
+                book_id=pending.book_id,
+                checked_out=False
+            ).all()
+            for item in cart_items:
+                item.checked_out = True
+        
+        # --- DEBUG PRINT ---
+        print(f"DEBUG: User {user.id} marked pending_request {pending.id} as purchased")
+        print(f"DEBUG: Cart items checked out: {[item.id for item in cart_items]}")
+
+    else:
+        return jsonify({"error": "Action not allowed"}), 403
+
     log = ActivityLog(
         user_id=user.id,
-        action=new_status.capitalize(),
+        action=log_action,
         item=f"Request {pending.id} for book '{pending.book.title if pending.book else pending.book_id}'"
     )
     db.session.add(log)
     db.session.commit()
-    print(f"Action logged for request {pending.id}")
+    print(f"DEBUG: Commit done for pending_request {pending.id}, status {pending.status}")
+    return jsonify({"message": f"Request updated to {pending.status}", "status": pending.status}), 200
 
-    return jsonify({"message": f"Request {new_status} and logged"}), 200
+
+# ---------------------------
+# Confirm borrow (User action to move approved -> borrowed)
+# ---------------------------
+@bp.route("/confirm/<request_id>", methods=["PATCH"])
+@jwt_required()
+def confirm_borrow(request_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    pending = PendingRequest.query.get_or_404(request_id)
+
+    if pending.user_id != user.id:
+        return jsonify({"error": "Not allowed"}), 403
+
+    if pending.status != "approved" or pending.action.lower() != "borrow":
+        return jsonify({"error": "Cannot confirm borrow"}), 400
+
+    pending.status = "borrowed"
+
+    log = ActivityLog(
+        user_id=user.id,
+        action="Borrowed",
+        item=f"Borrow confirmed for book '{pending.book.title if pending.book else pending.book_id}'"
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    return jsonify({"message": "Borrow confirmed", "status": "borrowed"}), 200

@@ -1,21 +1,47 @@
 // src/pages/auth/ResetPassword.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(`Password reset link sent to ${email}`);
+    setMessage("");
+    setError("");
+
+    try {
+      const res = await fetch("http://localhost:5000/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage("Password reset link sent! Redirecting...");
+        // Pass the token to the next page
+        setTimeout(() => navigate(`/auth/reset/${data.reset_token}`), 1500);
+      } else {
+        setError(data.msg || "Failed to send reset link");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-purple-50 p-4">
       <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold text-purple-700 mb-4">Reset Password</h2>
+
         {message && <p className="text-green-500 text-sm mb-2">{message}</p>}
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             type="email"
@@ -32,6 +58,7 @@ const ResetPassword = () => {
             Send Reset Link
           </button>
         </form>
+
         <div className="mt-4 flex justify-between text-sm">
           <Link to="/auth/login" className="text-purple-700 hover:underline">
             Back to Login

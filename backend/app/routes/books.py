@@ -103,6 +103,35 @@ def delete_book(book_id):
     book = Book.query.filter_by(id=book_id).first()
     if not book:
         return jsonify({"msg": "Book not found"}), 404
+
+    from ..models import PurchaseCartItem, PurchaseCart, PendingRequest
+
+    # Delete related cart items first
+    cart_items = PurchaseCartItem.query.filter_by(book_id=book.id).all()
+    if cart_items:
+        print(f"DEBUG: Deleting cart items for book {book.id}: {[item.id for item in cart_items]}")
+    for item in cart_items:
+        db.session.delete(item)
+
+    # Delete related pending requests
+    pending_requests = PendingRequest.query.filter_by(book_id=book.id).all()
+    if pending_requests:
+        print(f"DEBUG: Deleting pending requests for book {book.id}: {[req.id for req in pending_requests]}")
+    for req in pending_requests:
+        db.session.delete(req)
+
+    # Remove empty carts
+    carts = PurchaseCart.query.all()
+    for cart in carts:
+        remaining_items = PurchaseCartItem.query.filter_by(cart_id=cart.id).count()
+        if remaining_items == 0:
+            print(f"DEBUG: Deleting empty cart {cart.id}")
+            db.session.delete(cart)
+
+    # Now delete the book
+    print(f"DEBUG: Deleting book {book.id} - {book.title}")
     db.session.delete(book)
     db.session.commit()
-    return jsonify({"msg": "book deleted"}), 200
+
+    print(f"DEBUG: Deletion complete for book {book.id}")
+    return jsonify({"msg": "Book, related cart items, pending requests, and empty carts deleted"}), 200

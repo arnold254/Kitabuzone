@@ -22,9 +22,9 @@ const Library = () => {
       });
   }, []);
 
-  // ✅ Extract unique genres from books
+  // ✅ Extract unique genres
   const genreOptions = Array.from(
-    new Set(books.map((book) => book.genre).filter(Boolean))
+    new Set(books.map(book => book.genre).filter(Boolean))
   );
 
   const filteredBooks = books.filter(book =>
@@ -70,13 +70,23 @@ const Library = () => {
     }
   };
 
+  // ✅ Cover helper
+  const getCoverUrl = (book) => {
+    if (!book.cover || book.cover.trim() === "") {
+      return `https://via.placeholder.com/150?text=${encodeURIComponent(book.title)}`;
+    }
+    if (book.cover.startsWith("http") || book.cover.startsWith("data:")) {
+      return book.cover;
+    }
+    return `http://localhost:5000${book.cover.startsWith("/") ? "" : "/"}${book.cover}`;
+  };
+
   return (
     <div className="min-h-screen flex bg-milky-white">
       {/* Sidebar */}
       <aside className="w-48 bg-purple-50 p-4 text-purple-900">
         <h2 className="font-bold mb-4">Filters</h2>
         <div className="flex flex-col gap-3">
-          {/* ✅ Dynamic Genre Filter */}
           <select
             className="p-2 rounded border border-purple-300"
             value={genreFilter}
@@ -84,9 +94,7 @@ const Library = () => {
           >
             <option value="">All Categories</option>
             {genreOptions.map((genre) => (
-              <option key={genre} value={genre}>
-                {genre}
-              </option>
+              <option key={genre} value={genre}>{genre}</option>
             ))}
           </select>
         </div>
@@ -94,7 +102,6 @@ const Library = () => {
 
       {/* Main content */}
       <div className="flex-1 p-6">
-        {/* Header */}
         <div className="flex items-center mb-6">
           <Link to="/" className="text-purple-900 font-bold hover:underline">&lt;-- Home</Link>
           <div className="flex-1 mx-6 relative">
@@ -132,15 +139,10 @@ const Library = () => {
                 onClick={() => navigate(`/bookDetails/${book.id}`)}
               >
                 <img
-                  src={
-                    book.cover?.startsWith("http")
-                      ? book.cover
-                      : `https://via.placeholder.com/150?text=${book.title.replace(" ", "+")}`
-                  }
+                  src={getCoverUrl(book)}
                   alt={book.title}
                   className="w-full h-48 object-cover rounded mb-2"
                 />
-
                 <h3 className="font-bold text-purple-900">{book.title}</h3>
                 <p className="text-gray-600">{book.author}</p>
                 <button

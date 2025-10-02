@@ -1,5 +1,5 @@
-// src/pages/BorrowingCart.jsx
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../api";
 
@@ -27,7 +27,6 @@ export default function BorrowingCart() {
     try {
       const res = await API.patch(`/pendingRequests/confirm/${id}`);
       alert(res.data.message);
-      // Update state locally
       setRequests((prev) =>
         prev.map((r) => (r.id === id ? { ...r, status: "borrowed" } : r))
       );
@@ -39,14 +38,26 @@ export default function BorrowingCart() {
 
   return (
     <div className="p-6 space-y-6 min-h-screen bg-milky-white">
-      <h1 className="text-2xl font-bold text-purple-900 mb-4">📚 Borrowing Cart</h1>
+      <div className="flex justify-between items-center mb-4">
+        {/* ✅ Purple nav link */}
+        <Link
+          to="/viewBorrowedBooks"
+          className="text-purple-700 hover:underline font-medium"
+        >
+          &lt;-- View Borrowed
+        </Link>
+        <h1 className="text-2xl font-bold text-purple-900">📚 Borrowing Cart</h1>
+      </div>
 
       {requests.length === 0 ? (
         <p className="text-gray-500">No borrow requests to confirm.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {requests.map((req) => (
-            <div key={req.id} className="bg-white p-4 rounded-lg shadow-sm flex flex-col justify-between">
+            <div
+              key={req.id}
+              className="bg-white p-4 rounded-lg shadow-sm flex flex-col justify-between"
+            >
               <div>
                 <h2 className="font-bold text-purple-900 mb-1">{req.book?.title || "Unknown Book"}</h2>
                 <p className="text-gray-600 text-sm mb-1">Author: {req.book?.author || "Unknown"}</p>

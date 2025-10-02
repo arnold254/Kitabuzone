@@ -308,5 +308,3 @@ class ReturnRequest(db.Model):
     user = db.relationship("User", back_populates="return_requests", foreign_keys=[user_id])
     processed_by_user = db.relationship("User", back_populates="processed_returns", foreign_keys=[processed_by])
     book = db.relationship("Book", back_populates="return_requests")
-
-

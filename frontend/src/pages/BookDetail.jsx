@@ -1,42 +1,32 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
-const libraryBooks = [
-  {
-    id: 101,
-    title: "Clean Code",
-    author: "Robert C. Martin",
-    genre: "Programming",
-    language: "English",
-    cover: "https://via.placeholder.com/150x200.png?text=Clean+Code",
-    description: "A Handbook of Agile Software Craftsmanship."
-  },
-  {
-    id: 102,
-    title: "The Pragmatic Programmer",
-    author: "Andrew Hunt",
-    genre: "Programming",
-    language: "English",
-    cover: "https://via.placeholder.com/150x200.png?text=Pragmatic+Programmer",
-    description: "From Journeyman to Master."
-  },
-  {
-    id: 103,
-    title: "Introduction to Algorithms",
-    author: "Thomas H. Cormen",
-    genre: "Computer Science",
-    language: "English",
-    cover: "https://via.placeholder.com/150x200.png?text=Algorithms",
-    description: "Comprehensive guide to modern algorithms."
-  },
-];
+import { useBorrowedBooks } from "../context/BorrowedBooksContext";
+import { useState, useEffect } from "react";
+import API from "../api";
 
 const BookDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+  const { requests, setRequests } = useBorrowedBooks();
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const book = libraryBooks.find(b => b.id === parseInt(id));
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        const res = await API.get(`/books/${id}`);
+        setBook(res.data);
+      } catch (err) {
+        console.error("Error fetching book:", err);
+        setBook(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBook();
+  }, [id]);
+
+  if (loading) return <p className="p-6">Loading book...</p>;
 
   if (!book) {
     return (
@@ -49,14 +39,34 @@ const BookDetail = () => {
     );
   }
 
-  const handleBorrow = () => {
+  const handleBorrow = async () => {
     if (!isLoggedIn) {
       alert("Please sign in to borrow books!");
-      navigate("/auth/login", { state: { from: `/bookDetails/${book.id}` } });
       return;
     }
-    // ✅ Redirect to borrowing cart
-    navigate("/borrowingCart");
+
+    try {
+      const res = await API.post("/pendingRequests", {
+        book_id: book.id,
+        action: "borrow",
+      });
+
+      setRequests(prev => [
+        {
+          id: res.data.id,
+          book,
+          action: "borrow",
+          status: "pending",
+          created_at: new Date().toISOString(),
+        },
+        ...prev
+      ]);
+
+      alert("Borrow request submitted! Waiting for admin approval.");
+    } catch (err) {
+      console.error("Failed to submit borrow request:", err);
+      alert("Failed to submit borrow request.");
+    }
   };
 
   return (
@@ -68,7 +78,6 @@ const BookDetail = () => {
 
         <div className="flex flex-col md:flex-row gap-6">
           <img src={book.cover} alt={book.title} className="w-full md:w-1/3 h-auto object-cover rounded" />
-
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-purple-900">{book.title}</h2>
             <p className="text-gray-600 mb-2">Author: {book.author}</p>

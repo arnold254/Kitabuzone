@@ -59,6 +59,7 @@ def view_orders():
     for o in orders:
         response.append({
             "id": o.id,
+            "user_id": o.user_id,   # include user_id
             "status": o.status,
             "total_amount": str(o.total_amount),
             "created_at": o.created_at.isoformat() if o.created_at else None,
@@ -78,7 +79,8 @@ def view_orders():
     for p in pending_reqs:
         response.append({
             "id": f"pending-{p.id}",   # avoid clashing with real order IDs
-            "status": "pending",
+            "user_id": p.user_id,      # include user_id here too
+            "status": p.status,
             "total_amount": str(p.book.price) if p.book and p.book.price else "0",
             "created_at": p.created_at.isoformat() if p.created_at else None,
             "items": [

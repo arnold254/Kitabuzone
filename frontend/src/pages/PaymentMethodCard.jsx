@@ -11,24 +11,15 @@ export default function PaymentMethodCard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!orders.length) return alert("No orders to process.");
+    if (!orders.length) return;
 
     try {
-      // PATCH all orders to "purchased" using pending_request_id
-      await Promise.all(
-        orders.map(order => {
-          if (!order.pending_request_id) {
-            throw new Error(`Missing pending_request_id for book ${order.book_id}`);
-          }
-          return API.patch(`/pendingRequests/${order.pending_request_id}`, { status: "purchased" });
-        })
-      );
+      // Use the first pending_request_id to mark all approved requests as purchased
+      const firstRequestId = orders[0].pending_request_id;
+      await API.patch(`/pendingRequests/${firstRequestId}`, { status: "purchased" });
 
-      alert("Payment successful! Orders marked as purchased.");
-
-      // Navigate to payment processing page instead of viewOrders
-      navigate('/payment/processing', { state: { total, orders } }); 
+      // Navigate to payment processing page
+      navigate('/payment/processing', { state: { total, orders } });
     } catch (err) {
       console.error("Failed to update orders:", err);
       alert("Payment failed. Please try again.");

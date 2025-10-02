@@ -129,51 +129,64 @@ def update_request(request_id):
 
     # ---------- USER ACTIONS ----------
     else:
-     if pending.user_id != user.id:
-        return jsonify({"error": "Action not allowed: You do not own this request"}), 403
+        if pending.user_id != user.id:
+            return jsonify({"error": "Action not allowed: You do not own this request"}), 403
 
-    # Confirm borrow
-    if new_status.lower() == "confirm_borrow" and pending.status == "approved":
-        pending.status = "borrowed"
-        log_action = "Borrowed"
+        # Confirm borrow
+        if new_status.lower() == "confirm_borrow" and pending.status == "approved":
+            pending.status = "borrowed"
+            log_action = "Borrowed"
 
-    # Request return
-    elif new_status.lower() == "return_pending" and pending.status == "borrowed":
-        pending.status = "return_pending"
-        log_action = "Return Requested"
+        # Request return
+        elif new_status.lower() == "return_pending" and pending.status == "borrowed":
+            pending.status = "return_pending"
+            log_action = "Return Requested"
 
-    # Mark as purchased
-    elif new_status.lower() == "purchased" and pending.status == "approved":
-        pending.status = "purchased"
-        log_action = "Purchased"
+        # Mark as purchased - update all approved requests for this user
+        elif new_status.lower() == "purchased":
+            approved_requests = PendingRequest.query.filter_by(user_id=user.id, status="approved").all()
+            if not approved_requests:
+                return jsonify({"error": "No approved requests to purchase"}), 400
 
-        # --- Mark all cart items for this book as checked out ---
-        cart = PurchaseCart.query.filter_by(user_id=user.id).first()
-        if cart:
-            cart_items = PurchaseCartItem.query.filter_by(
-                cart_id=cart.id,
-                book_id=pending.book_id,
-                checked_out=False
-            ).all()
-            for item in cart_items:
-                item.checked_out = True
-        
-        # --- DEBUG PRINT ---
-        print(f"DEBUG: User {user.id} marked pending_request {pending.id} as purchased")
-        print(f"DEBUG: Cart items checked out: {[item.id for item in cart_items]}")
+            for p in approved_requests:
+                p.status = "purchased"
 
-    else:
-        return jsonify({"error": "Action not allowed"}), 403
+                # mark all cart items for this book as checked out
+                cart = PurchaseCart.query.filter_by(user_id=user.id).first()
+                if cart:
+                    cart_items = PurchaseCartItem.query.filter_by(
+                        cart_id=cart.id,
+                        book_id=p.book_id,
+                        checked_out=False
+                    ).all()
+                    for item in cart_items:
+                        item.checked_out = True
 
-    log = ActivityLog(
-        user_id=user.id,
-        action=log_action,
-        item=f"Request {pending.id} for book '{pending.book.title if pending.book else pending.book_id}'"
-    )
-    db.session.add(log)
-    db.session.commit()
-    print(f"DEBUG: Commit done for pending_request {pending.id}, status {pending.status}")
-    return jsonify({"message": f"Request updated to {pending.status}", "status": pending.status}), 200
+                # log each purchased request
+                log = ActivityLog(
+                    user_id=user.id,
+                    action="Purchased",
+                    item=f"Purchased request {p.id} for book '{p.book.title if p.book else p.book_id}'"
+                )
+                db.session.add(log)
+
+            db.session.commit()
+            print(f"DEBUG: User {user.id} purchased {len(approved_requests)} request(s)")
+            return jsonify({"message": f"{len(approved_requests)} request(s) marked as purchased"}), 200
+
+        else:
+            return jsonify({"error": "Action not allowed"}), 403
+
+        # Commit for non-purchase actions
+        log = ActivityLog(
+            user_id=user.id,
+            action=log_action,
+            item=f"Request {pending.id} for book '{pending.book.title if pending.book else pending.book_id}'"
+        )
+        db.session.add(log)
+        db.session.commit()
+        print(f"DEBUG: Commit done for pending_request {pending.id}, status {pending.status}")
+        return jsonify({"message": f"Request updated to {pending.status}", "status": pending.status}), 200
 
 
 # ---------------------------

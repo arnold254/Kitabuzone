@@ -1,51 +1,91 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import AddBook from './pages/AddBook'
-import BookDetails from './pages/BookDetails'
-import BorrowingCart from './pages/BorrowingCart'
-import Library from './pages/Library'
-import PaymentMethodCard from './pages/PaymentMethodCard'
-import PaymentMethodEwallet from './pages/PaymentMethodEwallet'
-import PaymentMethodMpesa from './pages/PaymentMethodMpesa'
-import PaymentProcessing from './pages/PaymentProcessing'
-import PaymentSuccessful from './pages/PaymentSuccessful'
-import ShoppingCart from './pages/ShoppingCart'
-import Store from './pages/Store'
-import ViewBorrowedBooks from './pages/ViewBorrowedBooks'
-import ViewOrders from './pages/ViewOrders'
-import Login from './pages/auth/Login'
-import Signup from './pages/auth/Signup'
-import ForgotPassword from './pages/auth/ForgotPassword'
-import ResetPassword from './pages/auth/ResetPassword'
+// src/App.jsx
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import Header from "./components/layout/Header";
+import Store from "./pages/Store";
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import ResetPassword from "./pages/auth/ResetPassword";
+import ResetPasswordConfirm from "./pages/auth/ResetPasswordConfirm";
 
-function App() {
+// Librbry & Store Pages
+import Library from "./pages/Library";
+import BorrowingCart from "./pages/BorrowingCart";
+import ViewBorrowedBooks from "./pages/ViewBorrowedBooks";
+import LibraryBookDetail from "./pages/BookDetail";
+import StoreBookDetail from "./pages/BookDetails";
+
+// Payment pages
+import PaymentMethodCard from "./pages/PaymentMethodCard";
+import PaymentProcessing from "./pages/PaymentProcessing";
+import PaymentSuccessful from "./pages/PaymentSuccessful";
+import ShoppingCart from "./pages/ShoppingCart";
+import ViewOrders from "./pages/ViewOrders";
+
+// Admin pages
+import AdminLayout from "./pages/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import ManageBooks from "./pages/admin/ManageBooks";
+import ManageUsers from "./pages/admin/ManageUsers";
+import ActivityLogs from "./pages/admin/ActivityLogs";
+import BorrowingReport from "./pages/admin/BorrowingReport";
+import SalesReport from "./pages/admin/SalesReport";
+
+// BorrowedBooks Context
+import { BorrowedBooksProvider } from "./context/BorrowedBooksContext";
+
+function AppWrapper() {
+  const location = useLocation();
+  const showHeader = location.pathname === "/"; // only show header on home
 
   return (
-    <BrowserRouter>
-
+    <>
+      {showHeader && <Header />}
       <Routes>
+        {/* Store / Homepage */}
         <Route path="/" element={<Store />} />
-          <Route path="/addBook" element={<AddBook />} />
-          <Route path="/bookDetails" element={<BookDetails />} />
-          <Route path="/borrowingCart" element={<BorrowingCart />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/paymentMethodCard" element={<PaymentMethodCard />} />
-          <Route path="/paymentMethodEwallet" element={<PaymentMethodEwallet />} />
-          <Route path="/paymentMethodMpesa" element={<PaymentMethodMpesa />} />
-          <Route path="/paymentProcessing" element={<PaymentProcessing />} />
-          <Route path="/paymentSuccessful" element={<PaymentSuccessful />} />
-          <Route path="/shoppingCart" element={<ShoppingCart />} />
-          <Route path="/viewBorrowedBooks" element={<ViewBorrowedBooks />} />
-          <Route path="/viewOrders" element={<ViewOrders />} />
-          <Route path="/Login" element={<Login />} />
-          <Route path="/Signup" element={<Signup />} />
-         <Route path="/forgot-password" element={<ForgotPassword />} />
-         <Route path="/reset-password" element={<ResetPassword />} />
 
+        {/* Auth pages */}
+        <Route path="/auth/login" element={<Login />} />
+        <Route path="/auth/signup" element={<Signup />} />
+        <Route path="/auth/reset" element={<ResetPassword />} />
+        <Route path="/auth/reset/:token" element={<ResetPasswordConfirm />} />
+
+        {/* Library and Borrowing */}
+        <Route path="/library" element={<Library />} />
+        <Route path="/bookDetails/:id" element={<LibraryBookDetail />} />
+        <Route path="/purchases/:id" element={<StoreBookDetail />} />
+        <Route path="/borrowingCart" element={<BorrowingCart />} />
+        <Route path="/viewBorrowedBooks" element={<ViewBorrowedBooks />} />
+
+        {/* Shopping & Payment Flow */}
+        <Route path="/shoppingCart" element={<ShoppingCart />} />
+        <Route path="/viewOrders" element={<ViewOrders />} />
+        <Route path="/payment/card" element={<PaymentMethodCard />} />
+        <Route path="/payment/processing" element={<PaymentProcessing />} />
+        <Route path="/payment/success" element={<PaymentSuccessful />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="managebooks" element={<ManageBooks />} />
+          <Route path="manageusers" element={<ManageUsers />} />
+          <Route path="activitylogs" element={<ActivityLogs />} />
+          <Route path="borrowingreport" element={<BorrowingReport />} />
+          <Route path="salesreport" element={<SalesReport />} />
+        </Route>
       </Routes>
-
-    </BrowserRouter>
-  )
+    </>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <BorrowedBooksProvider>
+      <BrowserRouter>
+        <AppWrapper />
+      </BrowserRouter>
+    </BorrowedBooksProvider>
+  );
+}
+
+export default App;

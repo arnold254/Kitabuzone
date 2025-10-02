@@ -1,39 +1,73 @@
 // src/pages/auth/ResetPassword.jsx
-import { useNavigate } from 'react-router-dom';
-import ResetPasswordForm from '../../components/forms/ResetPasswordForm';
-import Header from '../../components/layout/Header';
-import '../../styles/global.css';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const ResetPassword = () => {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (formData) => {
-    console.log('Reset password:', formData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+    setError("");
 
-    // Replace with real reset logic
-    setTimeout(() => {
-      navigate('/login');
-    }, 1000);
+    try {
+      const res = await fetch("http://localhost:5000/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage("Password reset link sent! Redirecting...");
+        // Pass the token to the next page
+        setTimeout(() => navigate(`/auth/reset/${data.reset_token}`), 1500);
+      } else {
+        setError(data.msg || "Failed to send reset link");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    }
   };
 
   return (
-    <div className="page">
-      <main className="page-overlay">
-        {/* Header card */}
-        <div className="page-content">
-          <Header />
-        </div>
+    <div className="min-h-screen flex flex-col justify-center items-center bg-purple-50 p-4">
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-purple-700 mb-4">Reset Password</h2>
 
-        {/* Form card */}
-        <div className="page-content">
-          <h2 className="page-title">Reset your password</h2>
-          <ResetPasswordForm onSubmit={handleSubmit} />
-          <p className="terms">
-            By continuing, you agree to our{' '}
-            <a href="/terms">Terms & Conditions</a>
-          </p>
+        {message && <p className="text-green-500 text-sm mb-2">{message}</p>}
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            required
+          />
+          <button
+            type="submit"
+            className="bg-purple-700 hover:bg-purple-800 text-white py-2 rounded-lg font-medium"
+          >
+            Send Reset Link
+          </button>
+        </form>
+
+        <div className="mt-4 flex justify-between text-sm">
+          <Link to="/auth/login" className="text-purple-700 hover:underline">
+            Back to Login
+          </Link>
+          <Link to="/" className="text-purple-700 hover:underline">
+            Back Home
+          </Link>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

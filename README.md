@@ -22,8 +22,8 @@ An **online book lending and buying application** where users can explore books,
 ## 📂 Project Structure
 
 ```bash
-├── Pipfile
-├── Pipfile.lock
+.
+├── LICENSE
 ├── README.md
 ├── backend
 │   ├── Pipfile
@@ -40,8 +40,8 @@ An **online book lending and buying application** where users can explore books,
 │   ├── migrations
 │   ├── requirements.txt
 │   ├── sample_data.sql
-│   └── temp_data.sql
-├── eslint.config.js
+│   ├── temp_data.sql
+│   └── wsgi.py
 ├── frontend
 │   ├── README.md
 │   ├── eslint.config.js
@@ -54,21 +54,42 @@ An **online book lending and buying application** where users can explore books,
 │   ├── src
 │   ├── tailwind.config.js
 │   └── vite.config.js
-├── index.html
-├── instance
-│   └── dev.db
-├── postcss.config.js
-├── tailwind.config.js
-└── vite.config.js
+└── render.yaml
+George Kahuki
+4:54 PM
+.
+├── LICENSE
+├── README.md
+├── backend
+│   ├── Pipfile
+│   ├── Pipfile.lock
+│   ├── app
+│   ├── app.db
+│   ├── database_contents.txt
+│   ├── database_contents_updated.txt
+│   ├── database_contents_updated2.txt
+│   ├── database_contents_updated3.txt
+│   ├── dev.db
+│   ├── generate_ids.py
+│   ├── instance
+│   ├── migrations
+│   ├── requirements.txt
+│   ├── sample_data.sql
+│   ├── temp_data.sql
+│   └── wsgi.py
+├── frontend
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── node_modules
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── public
+│   ├── src
+│   ├── tailwind.config.js
+│   └── vite.config.js
+└── render.yaml
 ```
-
-
-
-
-
-
-
-
 ---
 
 ## 🛠️ Technologies Used

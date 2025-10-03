@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
   // Login function returns full user object
   const login = async ({ email, password }) => {
     try {
-      const res = await fetch("https://kitabuzone.onrender.com/auth/login", {
+      const res = await fetch("https://kitabuzone-api.onrender.com/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async ({ name, email, password }) => {
     try {
-      const res = await fetch("https://kitabuzone.onrender.com/auth/register", {
+      const res = await fetch("https://kitabuzone-api.onrender.com/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),

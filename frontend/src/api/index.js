@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://kitabuzone.onrender.com", // backend URL
+  baseURL: "https://kitabuzone-api.onrender.com", // backend URL
 });
 
 //  Attach token automatically

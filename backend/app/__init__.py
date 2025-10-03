@@ -26,7 +26,9 @@ def create_app(config_class=DevelopmentConfig):
     CORS(
         app,
         resources={r"/*": {"origins": "https://kitabuzone-ktpc.onrender.com"}},
-        supports_credentials=True
+        supports_credentials=True,
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"]
     )
 
     # Register blueprints

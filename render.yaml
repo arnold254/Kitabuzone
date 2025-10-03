@@ -4,13 +4,18 @@ services:
     rootDir: backend
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python app.py"
+    startCommand: gunicorn "wsgi:app" --bind 0.0.0.0:$PORT
+    postDeployCommand: flask db upgrade
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: kitabuzone_db
           property: connectionString
+      - key: FLASK_APP
+        value: wsgi.py
+      - key: FLASK_ENV
+        value: production
 
   - type: web
     name: kitabuzone-ui

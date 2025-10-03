@@ -14,7 +14,7 @@ const ResetPassword = () => {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/auth/request-password-reset", {
+      const res = await fetch("https://kitabuzone-api.onrender.com/auth/request-password-reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

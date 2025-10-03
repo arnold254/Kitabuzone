@@ -15,7 +15,7 @@ const ManageUsers = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/admin/users", {
+      const res = await fetch("https://kitabuzone-api.onrender.com/admin/users", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -44,7 +44,7 @@ const ManageUsers = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/admin/users", {
+      const res = await fetch("https://kitabuzone-api.onrender.com/admin/users", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ const ManageUsers = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/admin/users/${id}`, {
+      const res = await fetch(`https://kitabuzone-api.onrender.com/admin/users/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

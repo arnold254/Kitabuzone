@@ -26,7 +26,7 @@ const ResetPasswordConfirm = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/auth/reset-password/${token}`, {
+      const res = await fetch(`https://kitabuzone-api.onrender.com/auth/reset-password/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ new_password: newPassword }), // only new_password in body

@@ -78,7 +78,7 @@ const Library = () => {
     if (book.cover.startsWith("http") || book.cover.startsWith("data:")) {
       return book.cover;
     }
-    return `http://localhost:5000${book.cover.startsWith("/") ? "" : "/"}${book.cover}`;
+    return `https://kitabuzone-api.onrender.com${book.cover.startsWith("/") ? "" : "/"}${book.cover}`;
   };
 
   return (

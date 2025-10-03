@@ -37,7 +37,7 @@ const BookDetails = () => {
     book.cover && book.cover.trim() !== ""
       ? book.cover.startsWith("http") || book.cover.startsWith("data:")
         ? book.cover
-        : `http://localhost:5000${book.cover.startsWith("/") ? "" : "/"}${book.cover}`
+        : `https://kitabuzone-api.onrender.com${book.cover.startsWith("/") ? "" : "/"}${book.cover}`
       : `https://via.placeholder.com/200?text=${encodeURIComponent(book.title)}`;
   // ----------------
 

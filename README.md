@@ -1,5 +1,5 @@
 # 📚 KitabuZone  
-An **online book lending and buying application** where users can explore books, borrow them from the library, or purchase them from the store. Admins and suppliers can manage inventory, while customers enjoy a seamless digital reading marketplace.  
+An **online book lending and buying application** where users can explore books, borrow them from the library, or purchase them from the store. Admins can manage inventory, while customers enjoy a seamless digital reading marketplace.  
 
 ## Live Demo
 
@@ -10,11 +10,11 @@ An **online book lending and buying application** where users can explore books,
 ---
 
 ## 🌟 Features
-- 🔑 **Authentication & Authorization** (JWT-based login, roles: Admin, Supplier, Customer).  
+- 🔑 **Authentication & Authorization** (JWT-based login, roles: Admin, Customer).  
 - 📖 **Browse Books** (filter by price, categories).  
 - 🛒 **Borrow & Purchase Flows** with separate carts.  
 - 📤 **Book Upload** with cover image support (by Admin).  
-- 👨‍💼 **Admin Panel** to manage users, suppliers, and book inventory.  
+- 👨‍💼 **Admin Panel** to manage users and book inventory.  
 - 🟣 **Modern UI** with React, TailwindCSS, and context-based state management.  
 
 ---
@@ -22,41 +22,6 @@ An **online book lending and buying application** where users can explore books,
 ## 📂 Project Structure
 
 ```bash
-.
-├── LICENSE
-├── README.md
-├── backend
-│   ├── Pipfile
-│   ├── Pipfile.lock
-│   ├── app
-│   ├── app.db
-│   ├── database_contents.txt
-│   ├── database_contents_updated.txt
-│   ├── database_contents_updated2.txt
-│   ├── database_contents_updated3.txt
-│   ├── dev.db
-│   ├── generate_ids.py
-│   ├── instance
-│   ├── migrations
-│   ├── requirements.txt
-│   ├── sample_data.sql
-│   ├── temp_data.sql
-│   └── wsgi.py
-├── frontend
-│   ├── README.md
-│   ├── eslint.config.js
-│   ├── index.html
-│   ├── node_modules
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── postcss.config.js
-│   ├── public
-│   ├── src
-│   ├── tailwind.config.js
-│   └── vite.config.js
-└── render.yaml
-George Kahuki
-4:54 PM
 .
 ├── LICENSE
 ├── README.md
@@ -132,7 +97,6 @@ cd backend
 - flask run
 
 
-
 ### 3. Frontend Setup
 - cd frontend
 - npm install
@@ -154,7 +118,7 @@ cd backend
 - On each API request, frontend sends Authorization: Bearer <token>.
 
 
-- Backend validates token and checks role (admin, supplier, customer).
+- Backend validates token and checks role (admin, customer).
 
 
 - Role-based access ensures only authorized users can manage books/orders.
@@ -200,7 +164,7 @@ cd backend
 
 - POST /orders → Checkout
 
-- GET /orders → Get orders (Admin/Supplier can view all)
+- GET /orders → Get orders (Admin can view all)
 
 
 ---
@@ -231,7 +195,7 @@ npm run build
 
 - Use start command:
 ```
-gunicorn "app:create_app()"
+gunicorn 'wsgi:app' --bind 0.0.0.0:$PORT"
 ```
 
 ## 👥 Contributors
